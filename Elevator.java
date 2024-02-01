@@ -2,7 +2,7 @@
 /**
  * Elevator class simulates the behavior of an elevator car within the elevator subsystem.
  * It processes events from the scheduler to perform actions such as moving to specific floors,
- * opening and closing doors, and signaling its current state.
+ * opening and closing doors, and signaling its current state
  *
  * @author Adham Elmahi
  * @version 2024-02-01
