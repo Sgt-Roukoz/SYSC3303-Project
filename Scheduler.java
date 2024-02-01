@@ -1,3 +1,5 @@
+import java.util.ArrayDeque;
+
 /**
  * Scheduler class
  * Acts as a communication channel for the floor and elevator subsystems
@@ -8,8 +10,10 @@
 
 public class Scheduler implements Runnable{
 
-    private ElevatorEvent currentEvent;
+    private ArrayDeque<ElevatorEvent> storedEvents;
     private boolean noEvent = true;
+    private boolean isFull = false;
+    private final int maxEvents = 5;
 
     public Scheduler(){}
 
@@ -25,21 +29,32 @@ public class Scheduler implements Runnable{
             } catch (InterruptedException ignored) {}
         }
 
-        noEvent = true;
+        if (storedEvents.size() < maxEvents)
+        {
+            isFull = false;
+        }
+        if (storedEvents.isEmpty())
+        {
+            noEvent = true;
+        }
         notifyAll();
-        return currentEvent;
+        return storedEvents.poll();
     }
 
     public synchronized void setEvent(ElevatorEvent event)
     {
-        while (!noEvent)
+        while (!noEvent && !isFull)
         {
             try {
                 wait();
             } catch (InterruptedException ignored) {}
         }
 
-        currentEvent = event;
+        storedEvents.add(event);
+        if (storedEvents.size() >= maxEvents)
+        {
+            isFull = true;
+        }
         noEvent = false;
         notifyAll();
     }
