@@ -4,8 +4,8 @@
  * It processes events from the scheduler to perform actions such as moving to specific floors,
  * opening and closing doors, and signaling its current state.
  *
- * @author Marwan Zeid
- * @version 2024-01-30
+ * @author Adham Elmahi
+ * @version 2024-02-01
  */
 public class Elevator implements Runnable {
     private int currentFloor;
