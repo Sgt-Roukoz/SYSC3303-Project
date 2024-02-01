@@ -1,6 +1,10 @@
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Scanner;
+
 /**
  * Floor class
- * Simulates a single floor of the building
+ * Simulates a single floor of the building, including lamps and buttons
  *
  * @author Eric Wang
  * @version 2024-01-31
@@ -26,6 +30,23 @@ public class Floor extends Thread{
     }
 
     /**
+     * Reads from an input file in specified format and processes each line as a command
+     * @param file the input file
+     */
+    public void processFile(File file) {
+        try {
+            Scanner scanner = new Scanner(file);
+            while (scanner.hasNextLine()) {
+                String line = scanner.nextLine();
+                this.processInput(line);
+            }
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Processes given string input, sending the appropriate event to the scheduler
      * @param input the given string input to be processed
      */
@@ -43,5 +64,13 @@ public class Floor extends Thread{
         else downLampOn = true;
         ElevatorEvent event = new ElevatorEvent(split[0], Integer.valueOf(split[1]), ELEVATOR_BUTTON.valueOf(split[2].toUpperCase()), Integer.valueOf(split[3]));
         scheduler.setEvent(event);
+    }
+
+    /**
+     * Runs this thread
+     */
+    @Override
+    public void run() {
+        super.run();
     }
 }
