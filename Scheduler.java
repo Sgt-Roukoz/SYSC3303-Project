@@ -32,7 +32,6 @@ public class Scheduler implements Runnable{
      * Returns the event that is currently stored in the scheduler
      * @return Returns storedEvent as ElevatorEvent
      */
-
     public synchronized ElevatorEvent getEvent()
     {
         while (noEvent)
@@ -60,6 +59,7 @@ public class Scheduler implements Runnable{
         noEvent = false;
         notifyAll();
     }
+    
     /**
      * Saves a response event to the scheduler
      *
