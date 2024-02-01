@@ -52,15 +52,15 @@ public class Floor extends Thread{
      */
     public void processInput(String input) {
         String[] split = input.split(" ");
-        if(isTopFloor && split[2].toUpperCase() == "UP") {
+        if(isTopFloor && split[2].equalsIgnoreCase("UP")) {
             System.out.println("This is the top floor, there is no up button.");
             return;
         }
-        else if (isBottomFloor && split[2].toUpperCase() == "DOWN") {
+        else if (isBottomFloor && split[2].equalsIgnoreCase("DOWN")) {
             System.out.println("This is the bottom floor, there is no down button.");
             return;
         }
-        if(split[2].toUpperCase() == "UP") upLampOn = true;
+        if(split[2].equalsIgnoreCase("UP")) upLampOn = true;
         else downLampOn = true;
         ElevatorEvent event = new ElevatorEvent(split[0], Integer.valueOf(split[1]), ELEVATOR_BUTTON.valueOf(split[2].toUpperCase()), Integer.valueOf(split[3]));
         scheduler.setEvent(event);
