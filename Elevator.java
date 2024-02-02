@@ -8,99 +8,122 @@
  * @version 2024-02-01
  */
 public class Elevator implements Runnable {
-    private int currentFloor;
-    private boolean doorsOpen;
-    private final Scheduler scheduler;
 
+    private static final long TIME_PER_FLOOR = 8000; // Average time per floor in milliseconds
+    private static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
+
+    private int currentFloor;
+    private final int elevatorId;
+    private final EventQueue eventQueue;
+
+    private boolean doorsOpen;
 
     /**
-     * Constructs an Elevator object with a reference to the Scheduler and an elevator ID.
-     * Initializes the elevator at floor 0 (ground floor) with doors closed.
+     * Constructs an Elevator object with a specified Scheduler and elevator ID.
+     * The elevator is initialized on the ground floor with doors closed.
      *
-     * @param scheduler  The scheduler object used for receiving and sending events.
-     * @param elevatorId The unique identifier for this elevator.
+     * @param eventQueue  The eventQueue used for receiving events and sending responses.
+     * @param elevatorId The ID of the elevator, unique within the elevator system.
      */
-    public Elevator(Scheduler scheduler, int elevatorId) {
-        this.scheduler = scheduler;
-        this.currentFloor = 0; // Assuming ground floor as start
+    public Elevator(EventQueue eventQueue, int elevatorId) {
+        this.eventQueue = eventQueue;
+        this.elevatorId = elevatorId;
+        this.currentFloor = 0; // Assuming ground floor as start.
         this.doorsOpen = false;
     }
 
+
     /**
-     * The main run method for the elevator's thread. Continuously polls the scheduler for events
-     * and processes them accordingly.
+     * The run method that is the entry point for the elevator's thread.
+     * It continuously polls for events from the Scheduler and processes them.
      */
     @Override
     public void run() {
-        while (true) {
-            ElevatorEvent event = scheduler.getEvent();
-            processEvent(event);
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                ElevatorEvent event = eventQueue.getElevatorRequest();
+                if (event != null) {
+                    processEvent(event);
+                }
+            } catch (Exception e) {
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
-
     /**
-     * Simulates moving the elevator to a specified floor. Updates the current floor and manages
-     * the opening and closing of doors.
-     *
-     * @param floor The destination floor.
-     */
-    private void moveToFloor(int floor) {
-        this.currentFloor = floor;
-        // Simulate opening and closing doors upon arrival
-        openDoors();
-        closeDoors();
-    }
-
-    /**
-     * Simulates opening the elevator doors by setting the doorsOpen attribute to true.
-     */
-    private void openDoors() {
-        this.doorsOpen = true;
-    }
-
-    /**
-     * Simulates closing the elevator doors by setting the doorsOpen attribute to false.
-     */
-    private void closeDoors() {
-        this.doorsOpen = false;
-    }
-
-    /**
-     * Simulates handling a button press inside the elevator. This method creates an event
-     * for the button press and sends it to the scheduler for processing.
-     *
-     * @param floor The floor number that was selected inside the elevator.
-     */
-    public void handleInsideButtonPress(int floor) {
-        // Assume ELEVATOR_BUTTON enum has an appropriate value for indicating an inside button press
-        ElevatorEvent buttonPressEvent = new ElevatorEvent(java.time.LocalTime.now().toString(), floor, ELEVATOR_BUTTON.INSIDE, floor);
-        sendEventToScheduler(buttonPressEvent);
-    }
-
-    /**
-     * Sends an event to the scheduler. This method encapsulates the logic for communicating
-     * with the scheduler, allowing the elevator to report its actions or requests.
-     *
-     * @param event The event to send to the scheduler.
-     */
-    private void sendEventToScheduler(ElevatorEvent event) {
-        scheduler.setEvent(event);
-    }
-
-    /**
-     * Processes an ElevatorEvent by moving to the required floor and performing related actions.
-     * Extended to include notifying the scheduler upon arrival.
+     * Processes an event received from the Scheduler. Depending on the event type,
+     * the elevator will move to the requested floor and open/close its doors.
      *
      * @param event The ElevatorEvent to process.
      */
     private void processEvent(ElevatorEvent event) {
-        // Notify scheduler when starting to move and upon arrival
-        sendEventToScheduler(new ElevatorEvent(java.time.LocalTime.now().toString(), currentFloor, ELEVATOR_BUTTON.START_MOVE, event.getFloor()));
-        moveToFloor(event.getFloor());
-        // Notify scheduler of arrival
-        sendEventToScheduler(new ElevatorEvent(java.time.LocalTime.now().toString(), currentFloor, ELEVATOR_BUTTON.ARRIVAL, event.getFloor()));
+        try {
+            switch (event.getButton()) {
+                case UP:
+                case DOWN:
+                    // Simulate moving to the specified floor.
+                    moveToFloor(event.getFloor());
+                    // Simulate time for doors to open and close.
+                    openDoors();
+                    Thread.sleep(DOOR_OPERATION_TIME);
+                    closeDoors();
+                    notifySchedulerOfArrival();
+                    break;
+                case INSIDE:
+                    // Simulate moving to the floor requested by an internal button press.
+                    moveToFloor(event.getCar_button());
+                    notifySchedulerOfArrival();
+                    break;
+                default:
+                    break;
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
+    /**
+     * Simulates the movement of the elevator to a specified floor.
+     * The movement is simulated by pausing the thread for a calculated duration.
+     *
+     * @param floor The target floor to which the elevator should move.
+     * @throws InterruptedException if the thread is interrupted while sleeping.
+     */
+    private void moveToFloor(int floor) throws InterruptedException {
+        int floorDifference = Math.abs(floor - currentFloor);
+        long travelTime = floorDifference * TIME_PER_FLOOR;
+        Thread.sleep(travelTime);
+        this.currentFloor = floor;
+        openDoors();
+        Thread.sleep(DOOR_OPERATION_TIME); // Simulate doors being open for loading/unloading
+        closeDoors();
+    }
+
+    /**
+     * Notifies the Scheduler of the elevator's arrival at a floor.
+     * This method constructs an arrival event and sends it to the Scheduler.
+     */
+    private void notifySchedulerOfArrival() {
+        ElevatorEvent arrivalEvent = new ElevatorEvent(java.time.LocalTime.now().toString(), currentFloor, ELEVATOR_BUTTON.ARRIVAL, 0);
+        eventQueue.setElevatorRequest(arrivalEvent);
+    }
+
+    /**
+     * Simulates opening the elevator doors.
+     */
+    private void openDoors() throws InterruptedException {
+        doorsOpen = true;
+        Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors opening
+    }
+
+    /**
+     * Simulates closing the elevator doors.
+     */
+    private void closeDoors() throws InterruptedException {
+        doorsOpen = false;
+        Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
+    }
 
 }
+
