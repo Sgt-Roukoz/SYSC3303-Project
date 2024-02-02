@@ -5,7 +5,7 @@
  * opening and closing doors, and signaling its current state
  *
  * @author Adham Elmahi
- * @version 2024-02-01
+ * @version 2024-02-02
  */
 public class Elevator implements Runnable {
 
