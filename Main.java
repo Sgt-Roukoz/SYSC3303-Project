@@ -1,4 +1,3 @@
-import java.io.File;
 
 /**
  * Dummy class
@@ -7,8 +6,16 @@ import java.io.File;
 public class Main {
 
     public static void main(String[] args) {
-        Scheduler scheduler = new Scheduler();
-        Floor floor = new Floor("Floor 1", scheduler, 1, false, true);
-        floor.processFile(new File("test.txt"));
+        EventQueue eventQueue = new EventQueue();
+        Scheduler scheduler = new Scheduler(eventQueue);
+        Elevator elevator = new Elevator(scheduler, eventQueue, 1);
+        Floor floor = new Floor("Floor 1", eventQueue, 1, false, true);
+
+        Thread floorThread = new Thread(floor);
+        Thread schedulerThread = new Thread(scheduler);
+        Thread elevatorThread = new Thread(elevator);
+
+        floorThread.start();
+        schedulerThread.start();
     }
 }

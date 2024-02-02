@@ -16,11 +16,11 @@ public class Floor extends Thread{
     private final int floorNumber;
     private final boolean isTopFloor;
     private final boolean isBottomFloor;
-    private final Scheduler scheduler;
+    private final EventQueue eventQueue;
 
-    public Floor(String name, Scheduler scheduler, int floorNumber, boolean isTopFloor, boolean isBottomFloor) {
+    public Floor(String name, EventQueue eventQueue, int floorNumber, boolean isTopFloor, boolean isBottomFloor) {
         super(name);
-        this.scheduler = scheduler;
+        this.eventQueue = eventQueue;
         this.floorNumber = floorNumber;
         this.upLampOn = false;
         this.downLampOn = false;
@@ -63,7 +63,8 @@ public class Floor extends Thread{
         if(split[2].equalsIgnoreCase("UP")) upLampOn = true;
         else downLampOn = true;
         ElevatorEvent event = new ElevatorEvent(split[0], Integer.valueOf(split[1]), ELEVATOR_BUTTON.valueOf(split[2].toUpperCase()), Integer.valueOf(split[3]));
-        scheduler.setEvent(event);
+        System.out.println("Floor adding event: " + event );
+        eventQueue.setFloorRequest(event);
     }
 
     /**
@@ -71,6 +72,7 @@ public class Floor extends Thread{
      */
     @Override
     public void run() {
-        super.run();
+        System.out.println("Started Floor");
+        processFile(new File("test.txt"));
     }
 }

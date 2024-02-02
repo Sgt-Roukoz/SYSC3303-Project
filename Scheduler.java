@@ -3,88 +3,62 @@
  * Acts as a communication channel for the floor and elevator subsystems
  *
  * @author Marwan Zeid
- * @version 2024-01-30
+ * @version 2024-02-02
  */
 
 public class Scheduler implements Runnable{
 
-    private ElevatorEvent storedEvent;
-    private ElevatorEvent responseEvent;
-    private boolean noEvent = true;
-    private boolean noResponseEvent = true;
+    private final EventQueue eventQueue;
+    private ElevatorEvent floorRequestToBeProcessed;
+    private ElevatorEvent processedRequest;
+    private int processedEvents = 0;
 
-    public Scheduler(){}
+    /**
+     * Scheduler class constructor
+     * @param eventQueue EventQueue object where various events will be stored
+     */
+    public Scheduler(EventQueue eventQueue){
+        this.eventQueue = eventQueue;
+    }
 
+    /**
+     * Main thread loop
+     */
     @Override
-    public void run() {}
-
-    /**
-     * Method holds the wait() function for synchronization purposes
-     */
-    private void mutex()
-    {
-        try {
-            wait();
-        } catch (InterruptedException ignored) {}
-    }
-
-    /**
-     * Returns the event that is currently stored in the scheduler
-     * @return Returns storedEvent as ElevatorEvent
-     */
-    public synchronized ElevatorEvent getEvent()
-    {
-        while (noEvent)
-        {
-            mutex();
+    public void run() {
+        while (processedEvents < 6) {
+            readFloorRequest();
+            processFloorRequest();
+            processedEvents++;
+            sendElevatorRequest();
         }
-
-        noEvent = true;
-        return storedEvent;
     }
 
     /**
-     * Saves the event in the scheduler.
-     *
-     * @param event The event to be stored
+     * Read an ElevatorEvent from the floor request queue in eventQueue
      */
-    public synchronized void setEvent(ElevatorEvent event)
+    private void readFloorRequest()
     {
-        while (!noEvent)
-        {
-            mutex();
-        }
-
-        storedEvent = event;
-        noEvent = false;
-        notifyAll();
-    }
-    
-    /**
-     * Saves a response event to the scheduler
-     *
-     * @param event The event to be stored
-     */
-    public synchronized void setResponseEvent(ElevatorEvent event)
-    {
-        responseEvent = event;
-        noResponseEvent = false;
-        notifyAll();
+        floorRequestToBeProcessed = eventQueue.getFloorRequest();
     }
 
     /**
-     * Returns the response event currently stored by the scheduler
-     * @return Returns the current response
+     * Process the ElevatorEvent request and convert into an event usable by Elevator
      */
-    public synchronized ElevatorEvent getResponseEvent()
+    private void processFloorRequest()
     {
-        while(noResponseEvent)
-        {
-            mutex();
-        }
-
-        noResponseEvent = true;
-        return responseEvent;
+        System.out.println("Processing " + floorRequestToBeProcessed);
+        //do stuff, functionality ot be added in later iteration
+        processedRequest = floorRequestToBeProcessed;
     }
+
+    /**
+     * Send the processed ElevatorEvent to the elevator queue in eventQueue
+     */
+    private void sendElevatorRequest()
+    {
+        eventQueue.setElevatorRequest(processedRequest);
+    }
+
 
 }

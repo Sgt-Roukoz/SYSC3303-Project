@@ -21,6 +21,10 @@ public class ElevatorEvent { //convert to Record?
         this.car_button = car_button;
     }
 
+    public String toString(){
+        return time + " " + floor + " " + button + " " + car_button;
+    }
+
     // Getters for each of the values
     public String getTime()
     {
