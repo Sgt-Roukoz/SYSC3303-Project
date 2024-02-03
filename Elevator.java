@@ -41,7 +41,7 @@ public class Elevator implements Runnable {
     @Override
     public void run() {
         System.out.println("Elevator " + elevatorId + " is starting on floor " + currentFloor);
-        while (!Thread.currentThread().isInterrupted()) {
+        while (eventQueue.processedEvents < eventQueue.maxEvents) {
             try {
                 ElevatorEvent event = eventQueue.getElevatorRequest();
                 if (event != null) {
@@ -110,8 +110,7 @@ public class Elevator implements Runnable {
      */
    private void notifySchedulerOfArrival() {
         System.out.println("Elevator " + elevatorId + " notifying scheduler of arrival at floor " + currentFloor);
-        ElevatorEvent arrivalEvent = new ElevatorEvent(java.time.LocalTime.now().toString(), currentFloor, ELEVATOR_BUTTON.ARRIVAL, 0);
-        eventQueue.setElevatorRequest(arrivalEvent);
+        eventQueue.elevatorArrived();
     }
 
     /**
