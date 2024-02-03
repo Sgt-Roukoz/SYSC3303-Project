@@ -74,5 +74,6 @@ public class Floor extends Thread{
     public void run() {
         System.out.println("Started Floor");
         processFile(new File("test.txt"));
+        System.out.println("Floor done");
     }
 }

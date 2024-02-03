@@ -11,7 +11,6 @@ public class Scheduler implements Runnable{
     private final EventQueue eventQueue;
     private ElevatorEvent floorRequestToBeProcessed;
     private ElevatorEvent processedRequest;
-    private int processedEvents = 0;
 
     /**
      * Scheduler class constructor
@@ -26,11 +25,13 @@ public class Scheduler implements Runnable{
      */
     @Override
     public void run() {
-        while (processedEvents < 6) {
+        while (eventQueue.processedEvents < eventQueue.maxEvents) {
+
             readFloorRequest();
-            processFloorRequest();
-            processedEvents++;
-            sendElevatorRequest();
+            if (floorRequestToBeProcessed != null) {
+                processFloorRequest();
+                sendElevatorRequest();
+            }
         }
     }
 
@@ -47,8 +48,9 @@ public class Scheduler implements Runnable{
      */
     private void processFloorRequest()
     {
-        System.out.println("Processing " + floorRequestToBeProcessed);
         //do stuff, functionality ot be added in later iteration
+
+        System.out.println("Scheduler: Processing floor event: " + floorRequestToBeProcessed);
         processedRequest = floorRequestToBeProcessed;
     }
 
@@ -57,7 +59,8 @@ public class Scheduler implements Runnable{
      */
     private void sendElevatorRequest()
     {
-        eventQueue.setElevatorRequest(processedRequest);
+            System.out.println("Sending elevator event: " + processedRequest);
+            eventQueue.setElevatorRequest(processedRequest);
     }
 
 

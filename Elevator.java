@@ -7,10 +7,11 @@
  * @author Adham Elmahi
  * @version 2024-02-02
  */
+
 public class Elevator implements Runnable {
 
-    private static final long TIME_PER_FLOOR = 8000; // Average time per floor in milliseconds
-    private static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
+    private static final long TIME_PER_FLOOR = 800; // Average time per floor in milliseconds
+    private static final long DOOR_OPERATION_TIME = 1100; // Average door operation time in milliseconds
 
     private int currentFloor;
     private final int elevatorId;
@@ -39,7 +40,7 @@ public class Elevator implements Runnable {
      */
     @Override
     public void run() {
-        while (!Thread.currentThread().isInterrupted()) {
+        while (eventQueue.processedEvents < eventQueue.maxEvents) {
             try {
                 ElevatorEvent event = eventQueue.getElevatorRequest();
                 if (event != null) {
@@ -58,6 +59,7 @@ public class Elevator implements Runnable {
      * @param event The ElevatorEvent to process.
      */
     private void processEvent(ElevatorEvent event) {
+        System.out.println("Elevator: Processing " + event);
         try {
             switch (event.getButton()) {
                 case UP:
@@ -105,8 +107,8 @@ public class Elevator implements Runnable {
      * This method constructs an arrival event and sends it to the Scheduler.
      */
     private void notifySchedulerOfArrival() {
-        ElevatorEvent arrivalEvent = new ElevatorEvent(java.time.LocalTime.now().toString(), currentFloor, ELEVATOR_BUTTON.ARRIVAL, 0);
-        eventQueue.setElevatorRequest(arrivalEvent);
+        System.out.println("Arrived to floor ?");
+        eventQueue.elevatorArrived();
     }
 
     /**

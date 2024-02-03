@@ -10,7 +10,9 @@ import java.util.ArrayDeque;
 public class EventQueue {
     private final ArrayDeque<ElevatorEvent> floorRequest;
     private final ArrayDeque<ElevatorEvent> elevatorRequest;
-    private final int maxQueue = 5;
+    public int processedEvents = 0;
+    public int maxEvents = 6; // Max events for testing purposes
+    private final int maxQueue = 3;
 
     public EventQueue(){
         floorRequest = new ArrayDeque<>();
@@ -33,12 +35,11 @@ public class EventQueue {
      */
     public synchronized ElevatorEvent getFloorRequest()
     {
-        while (floorRequest.isEmpty())
-        {
-            mutex();
-        }
+        if (floorRequest.isEmpty()) return null;
 
-        return floorRequest.poll();
+        ElevatorEvent returningEvent = floorRequest.remove();
+        notifyAll();
+        return returningEvent;
     }
 
     /**
@@ -55,7 +56,6 @@ public class EventQueue {
 
         floorRequest.add(event);
         notifyAll();
-        System.out.println(floorRequest);
     }
 
     /**
@@ -90,6 +90,7 @@ public class EventQueue {
 
     public synchronized void elevatorArrived()
     {
+        processedEvents++;
         notifyAll();
     }
 }

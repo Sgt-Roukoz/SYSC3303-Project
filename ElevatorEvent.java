@@ -5,6 +5,7 @@
  * @author Marwan Zeid
  * @version 2024-01-30
  */
+
 public class ElevatorEvent { //convert to Record?
     private final String time;
     private final int floor;
