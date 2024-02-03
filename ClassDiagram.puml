@@ -1,0 +1,103 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Elevator
+class ElevatorEvent
+class EventQueue
+class Floor
+class Main
+class Scheduler
+enum ELEVATOR_BUTTON
+exception InterruptedException <<exception>>
+
+Scheduler *-- EventQueue
+Elevator *-- EventQueue
+Floor *-- EventQueue
+
+InterruptedException <|.. Elevator
+
+class Elevator implements Runnable {
+-{static} TIME_PER_FLOOR: long {readOnly}
+-{static} DOOR_OPERATION_TIME: long {readOnly}
+-currentFloor: int
+-elevatorId: int {readOnly}
+-eventQueue: EventQueue {readOnly}
+-doorsOpen: boolean
+
++Elevator(eventQueue: EventQueue, elevatorId: int)
++run(): void
+-processEvent(event: ElevatorEvent): void
+-moveToFloor(floor: int) throws InterruptedException : void
+-notifySchedulerOfArrival(): void
+-openDoors() throws InterruptedException: void
+-closeDoors() throws InterruptedException : void
+}
+
+enum ELEVATOR_BUTTON {
+UP
+DOWN
+INSIDE
+START_MOVE
+ARRIVAL
+}
+
+class ElevatorEvent{
+-time: String {readOnly}
+-floor: int {readOnly}
+-button: ELEVATOR_BUTTON {readOnly}
+-car_button: int{readOnly}
+
++ElevatorEvent(time: String, floor: int, button: ELEVATOR_BUTTON, car_button: int)
++toString(): String
++getTime(): String
++getFloor(): int
++getButton(): ELEVATOR_BUTTON
++getCar_button(): int
+}
+
+class EventQueue{
+-floorRequest:ArrayDeque<ElevatorEvent> {readOnly}
+-elevatorRequest: ArrayDeque<ElevatorEvent> {readOnly}
++processedEvents: int
++maxEvents: int
+-maxQueue: int {readOnly}
+
++EventQueue()
+-mutex(): void
++synchronized getFloorRequest(): ElevatorEvent
++synchronized setFloorRequest(event: ElevatorEvent): void
++synchronized setElevatorRequest(event: ElevatorEvent): void
++synchronized getElevatorRequest(): ElevatorEvent
++synchronized elevatorArrived(): void
+}
+
+class Floor extends Thread{
+upLampOn: boolean
+downLampOn: boolean
+elevatorArrived: boolean
+-eventQueue:EventQueue {readOnly}
+
++Floor(name: String, eventQueue: EventQueue)
++processFile(file: File): void
++processInput(input: String): void
++run(): void
+}
+
+class Main{
++{Static} main(args:String[]): void
+}
+
+class Scheduler implements Runnable{
+-eventQueue:EventQueue {readOnly}
+-floorRequestToBeProcessed: ElevatorEvent
+-processedRequest:ElevatorEvent
+
++Scheduler(eventQueue: EventQueue)
++run():void
+-readFloorRequest(): void
+-processFloorRequest(): void
+-sendElevatorRequest(): void
+
+}
+
+@enduml
