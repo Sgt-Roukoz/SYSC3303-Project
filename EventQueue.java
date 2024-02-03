@@ -88,6 +88,9 @@ public class EventQueue {
         return elevatorRequest.poll();
     }
 
+    /**
+     * Notify threads that elevator has reached the floor the event requested
+     */
     public synchronized void elevatorArrived()
     {
         processedEvents++;
