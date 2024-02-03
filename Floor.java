@@ -13,15 +13,13 @@ public class Floor extends Thread{
     boolean upLampOn;
     boolean downLampOn;
     boolean elevatorArrived;
-    private final int floorNumber;
     private final boolean isTopFloor;
     private final boolean isBottomFloor;
     private final EventQueue eventQueue;
 
-    public Floor(String name, EventQueue eventQueue, int floorNumber, boolean isTopFloor, boolean isBottomFloor) {
+    public Floor(String name, EventQueue eventQueue, boolean isTopFloor, boolean isBottomFloor) {
         super(name);
         this.eventQueue = eventQueue;
-        this.floorNumber = floorNumber;
         this.upLampOn = false;
         this.downLampOn = false;
         this.elevatorArrived = false;
