@@ -10,8 +10,8 @@
 
 public class Elevator implements Runnable {
 
-    private static final long TIME_PER_FLOOR = 800; // Average time per floor in milliseconds
-    private static final long DOOR_OPERATION_TIME = 1100; // Average door operation time in milliseconds
+    private static final long TIME_PER_FLOOR = 8000; // Average time per floor in milliseconds
+    private static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
 
     private int currentFloor;
     private final int elevatorId;
@@ -62,29 +62,25 @@ public class Elevator implements Runnable {
      * @param event The ElevatorEvent to process.
      */
     private void processEvent(ElevatorEvent event) {
-        System.out.println("Elevator: Processing " + event);
         try {
-            switch (event.getButton()) {
-                case UP:
-                case DOWN:
-                    // Simulate moving to the specified floor.
-                    moveToFloor(event.getFloor());
-                    // Simulate time for doors to open and close.
-                    openDoors();
-                    Thread.sleep(DOOR_OPERATION_TIME);
-                    closeDoors();
-                    notifySchedulerOfArrival();
-                    break;
-                case INSIDE:
-                    // Simulate moving to the floor requested by an internal button press.
-                    moveToFloor(event.getCar_button());
-                    notifySchedulerOfArrival();
-                    break;
-                default:
-                    break;
+            System.out.println("Elevator " + elevatorId + ": Processing " + event);
+            if (currentFloor != event.getFloor()) {
+                moveToFloor(event.getFloor());
+                openDoors();
+                Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors opening
+                closeDoors();
+                Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
             }
+            if (currentFloor != event.getCar_button()) {
+                moveToFloor(event.getCar_button());
+                openDoors();
+                Thread.sleep(DOOR_OPERATION_TIME); // Simulate doors staying open for people to exit/enter
+                closeDoors();
+            }
+            notifySchedulerOfArrival();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
+            System.out.println("Elevator " + elevatorId + " was interrupted.");
         }
     }
 
