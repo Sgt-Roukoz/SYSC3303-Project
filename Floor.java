@@ -13,20 +13,15 @@ public class Floor extends Thread{
     boolean upLampOn;
     boolean downLampOn;
     boolean elevatorArrived;
-    private final int floorNumber;
-    private final boolean isTopFloor;
-    private final boolean isBottomFloor;
     private final EventQueue eventQueue;
 
-    public Floor(String name, EventQueue eventQueue, int floorNumber, boolean isTopFloor, boolean isBottomFloor) {
+    public Floor(String name, EventQueue eventQueue) {
         super(name);
         this.eventQueue = eventQueue;
-        this.floorNumber = floorNumber;
         this.upLampOn = false;
         this.downLampOn = false;
         this.elevatorArrived = false;
-        this.isBottomFloor = isBottomFloor;
-        this.isTopFloor = isTopFloor;
+
     }
 
     /**
@@ -52,14 +47,14 @@ public class Floor extends Thread{
      */
     public void processInput(String input) {
         String[] split = input.split(" ");
-        if(isTopFloor && split[2].equalsIgnoreCase("UP")) {
+        /*if(isTopFloor && split[2].equalsIgnoreCase("UP")) {
             System.out.println("This is the top floor, there is no up button.");
             return;
         }
         else if (isBottomFloor && split[2].equalsIgnoreCase("DOWN")) {
             System.out.println("This is the bottom floor, there is no down button.");
             return;
-        }
+        }*/
         if(split[2].equalsIgnoreCase("UP")) upLampOn = true;
         else downLampOn = true;
         ElevatorEvent event = new ElevatorEvent(split[0], Integer.valueOf(split[1]), ELEVATOR_BUTTON.valueOf(split[2].toUpperCase()), Integer.valueOf(split[3]));
@@ -74,5 +69,6 @@ public class Floor extends Thread{
     public void run() {
         System.out.println("Started Floor");
         processFile(new File("test.txt"));
+        System.out.println("Floor done");
     }
 }
