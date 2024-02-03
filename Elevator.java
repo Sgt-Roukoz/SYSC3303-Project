@@ -110,8 +110,8 @@ public class Elevator implements Runnable {
      */
    private void notifySchedulerOfArrival() {
         System.out.println("Elevator " + elevatorId + " notifying scheduler of arrival at floor " + currentFloor);
-        ElevatorEvent arrivalEvent = new ElevatorEvent(java.time.LocalTime.now().toString(), currentFloor, ELEVATOR_BUTTON.ARRIVAL, 0);
-        eventQueue.setElevatorRequest(arrivalEvent);
+        eventQueue.elevatorArrived();
+
     }
 
     /**
