@@ -39,13 +39,16 @@ public class Elevator implements Runnable {
      */
     @Override
     public void run() {
+        System.out.println("Elevator " + elevatorId + " is starting on floor " + currentFloor);
         while (!Thread.currentThread().isInterrupted()) {
             try {
                 ElevatorEvent event = eventQueue.getElevatorRequest();
                 if (event != null) {
+                    System.out.println("Elevator " + elevatorId + " received event: " + event);
                     processEvent(event);
                 }
             } catch (Exception e) {
+                System.out.println("Elevator " + elevatorId + " interrupted.");
                 Thread.currentThread().interrupt();
             }
         }
@@ -93,11 +96,10 @@ public class Elevator implements Runnable {
     private void moveToFloor(int floor) throws InterruptedException {
         int floorDifference = Math.abs(floor - currentFloor);
         long travelTime = floorDifference * TIME_PER_FLOOR;
+        System.out.println("Elevator " + elevatorId + " moving from floor " + currentFloor + " to floor " + floor);
         Thread.sleep(travelTime);
         this.currentFloor = floor;
-        openDoors();
-        Thread.sleep(DOOR_OPERATION_TIME); // Simulate doors being open for loading/unloading
-        closeDoors();
+        System.out.println("Elevator " + elevatorId + " arrived at floor " + currentFloor);
     }
 
     /**
@@ -105,6 +107,7 @@ public class Elevator implements Runnable {
      * This method constructs an arrival event and sends it to the Scheduler.
      */
     private void notifySchedulerOfArrival() {
+        System.out.println("Elevator " + elevatorId + " notifying scheduler of arrival at floor " + currentFloor);
         ElevatorEvent arrivalEvent = new ElevatorEvent(java.time.LocalTime.now().toString(), currentFloor, ELEVATOR_BUTTON.ARRIVAL, 0);
         eventQueue.setElevatorRequest(arrivalEvent);
     }
@@ -113,6 +116,7 @@ public class Elevator implements Runnable {
      * Simulates opening the elevator doors.
      */
     private void openDoors() throws InterruptedException {
+        System.out.println("Elevator " + elevatorId + " doors opening.");
         doorsOpen = true;
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors opening
     }
@@ -121,6 +125,7 @@ public class Elevator implements Runnable {
      * Simulates closing the elevator doors.
      */
     private void closeDoors() throws InterruptedException {
+        System.out.println("Elevator " + elevatorId + " doors closing.");
         doorsOpen = false;
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
     }
