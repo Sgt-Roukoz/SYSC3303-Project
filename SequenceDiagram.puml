@@ -1,0 +1,23 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+activate Floor
+activate EventQueue
+activate Scheduler
+activate Elevator
+Floor -> Floor: processFile(file: File)
+Floor -> Floor: processInput(input: String)
+Floor --> EventQueue: setFloorRequest(event: ElevatorEvent)
+
+loop while processedEvents < maxEvents
+    Scheduler --> EventQueue: ReadFloorRequest()
+    EventQueue -> Scheduler: getFloorRequest(): ElevatorEvent
+    alt floorRequestToBeProcessed != null
+        Scheduler -> Scheduler: processFloorRequest()
+        Scheduler --> EventQueue: sendElevatorRequest()
+    end
+end
+
+@enduml
