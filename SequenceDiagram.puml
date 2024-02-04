@@ -20,4 +20,13 @@ loop while processedEvents < maxEvents
     end
 end
 
+loop while processedEvents < maxEvents
+    Elevator --> EventQueue: getElevatorRequest()
+    alt elevatorRequest.isEmpty
+        EventQueue --> Elevator: event: ElevatorEvent
+    end
+    alt event != null
+        Elevator -> Elevator: processEvent(event: ElevatorEvent)
+    end
+
 @enduml
