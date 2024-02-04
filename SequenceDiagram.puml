@@ -7,26 +7,33 @@ activate Floor
 activate EventQueue
 activate Scheduler
 activate Elevator
-Floor -> Floor: processFile(file: File)
-Floor -> Floor: processInput(input: String)
-Floor --> EventQueue: setFloorRequest(event: ElevatorEvent)
-
 loop while processedEvents < maxEvents
-    Scheduler --> EventQueue: ReadFloorRequest()
-    EventQueue -> Scheduler: getFloorRequest(): ElevatorEvent
-    alt floorRequestToBeProcessed != null
-        Scheduler -> Scheduler: processFloorRequest()
-        Scheduler --> EventQueue: sendElevatorRequest()
+    Floor -> Floor: processFile(file: File)
+    Floor -> Floor: processInput(input: String)
+    Floor --> EventQueue: setFloorRequest(event: ElevatorEvent)
+
+    loop while processedEvents < maxEvents
+        Scheduler --> EventQueue: ReadFloorRequest()
+        EventQueue -> Scheduler: getFloorRequest(): ElevatorEvent
+        alt floorRequestToBeProcessed != null
+            Scheduler -> Scheduler: processFloorRequest()
+            Scheduler --> EventQueue: sendElevatorRequest()
+        end
+    end
+
+    loop while processedEvents < maxEvents
+        Elevator --> EventQueue: getElevatorRequest()
+        alt elevatorRequest.isEmpty
+            EventQueue --> Elevator: event: ElevatorEvent
+        end
+        alt event != null
+            Elevator -> Elevator: processEvent(event: ElevatorEvent)
+        end
     end
 end
 
-loop while processedEvents < maxEvents
-    Elevator --> EventQueue: getElevatorRequest()
-    alt elevatorRequest.isEmpty
-        EventQueue --> Elevator: event: ElevatorEvent
-    end
-    alt event != null
-        Elevator -> Elevator: processEvent(event: ElevatorEvent)
-    end
-
+destroy Floor
+destroy EventQueue
+destroy Elevator
+destroy Scheduler
 @enduml
