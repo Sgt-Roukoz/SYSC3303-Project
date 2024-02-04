@@ -127,5 +127,9 @@ public class Elevator implements Runnable {
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
     }
 
+    public void setOpenDoors() {doorsOpen = true;}
+    public void setCloseDoors() {doorsOpen = false;}
+    public boolean getDoorBoolean() {return doorsOpen;}
+    public void setNotifySchedulerOfArrival() {eventQueue.elevatorArrived();}
 }
 

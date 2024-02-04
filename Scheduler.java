@@ -63,5 +63,27 @@ public class Scheduler implements Runnable{
             eventQueue.setElevatorRequest(processedRequest);
     }
 
+    public void setReadFloorRequest() {
+        this.floorRequestToBeProcessed = this.eventQueue.getFloorRequest();
+    }
 
+    public void setProcessFloorRequest() {
+        this.processedRequest = this.floorRequestToBeProcessed;
+    }
+
+    public void setSendElevatorRequest() {
+        this.eventQueue.setElevatorRequest(this.processedRequest);
+    }
+
+    public EventQueue getEventQueue() {
+        return this.eventQueue;
+    }
+
+    public ElevatorEvent getFloorRequestToBeProcessed() {
+        return this.floorRequestToBeProcessed;
+    }
+
+    public ElevatorEvent getProcessedRequest() {
+        return this.processedRequest;
+    }
 }
