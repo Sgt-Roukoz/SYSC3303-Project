@@ -1,30 +1,32 @@
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 class ElevatorTest {
+    ElevatorTest() {
+    }
 
     @Test
-    void testOpenDoor()throws InterruptedException{
+    void testOpenDoor() throws InterruptedException {
         EventQueue eventQueue = new EventQueue();
         Elevator testingElevator = new Elevator(eventQueue, 1);
         testingElevator.setOpenDoors();
-        assertTrue(testingElevator.getDoorBoolean());
+        Assertions.assertTrue(testingElevator.getDoorBoolean());
     }
 
     @Test
-    void testCloseDoor()throws InterruptedException{
+    void testCloseDoor() throws InterruptedException {
         EventQueue eventQueue = new EventQueue();
         Elevator testingElevator = new Elevator(eventQueue, 1);
         testingElevator.setCloseDoors();
-        assertFalse(testingElevator.getDoorBoolean());
+        Assertions.assertFalse(testingElevator.getDoorBoolean());
     }
 
     @Test
-    void TestNotifySchedulerOfArrival(){
+    void TestNotifySchedulerOfArrival() {
         EventQueue eventQueue = new EventQueue();
         Elevator testingElevator = new Elevator(eventQueue, 1);
         testingElevator.setNotifySchedulerOfArrival();
-        assertEquals(1, eventQueue.processedEvents);
+        Assertions.assertEquals(1, eventQueue.processedEvents);
     }
+
 }

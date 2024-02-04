@@ -1,40 +1,66 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
+/**
+ * Scheduler class
+ * Acts as a communication channel for the floor and elevator subsystems
+ *
+ * @author Marwan Zeid
+ * @version 2024-02-02
+ */
 
-public class Scheduler implements Runnable {
+public class Scheduler implements Runnable{
+
     private final EventQueue eventQueue;
     private ElevatorEvent floorRequestToBeProcessed;
     private ElevatorEvent processedRequest;
 
-    public Scheduler(EventQueue eventQueue) {
+    /**
+     * Scheduler class constructor
+     * @param eventQueue EventQueue object where various events will be stored
+     */
+    public Scheduler(EventQueue eventQueue){
         this.eventQueue = eventQueue;
     }
 
+    /**
+     * Main thread loop
+     */
+    @Override
     public void run() {
-        while(this.eventQueue.processedEvents < this.eventQueue.maxEvents) {
-            this.readFloorRequest();
-            if (this.floorRequestToBeProcessed != null) {
-                this.processFloorRequest();
-                this.sendElevatorRequest();
+        while (eventQueue.processedEvents < eventQueue.maxEvents) {
+
+            readFloorRequest();
+            if (floorRequestToBeProcessed != null) {
+                processFloorRequest();
+                sendElevatorRequest();
             }
         }
-
     }
 
-    private void readFloorRequest() {
-        this.floorRequestToBeProcessed = this.eventQueue.getFloorRequest();
+    /**
+     * Read an ElevatorEvent from the floor request queue in eventQueue
+     */
+    private void readFloorRequest()
+    {
+        floorRequestToBeProcessed = eventQueue.getFloorRequest();
     }
 
-    private void processFloorRequest() {
-        System.out.println("Scheduler: Processing floor event: " + String.valueOf(this.floorRequestToBeProcessed));
-        this.processedRequest = this.floorRequestToBeProcessed;
+    /**
+     * Process the ElevatorEvent request and convert into an event usable by Elevator
+     */
+    private void processFloorRequest()
+    {
+        //do stuff, functionality ot be added in later iteration
+
+        System.out.println("Scheduler: Processing floor event: " + floorRequestToBeProcessed);
+        processedRequest = floorRequestToBeProcessed;
     }
 
-    private void sendElevatorRequest() {
-        System.out.println("Sending elevator event: " + String.valueOf(this.processedRequest));
-        this.eventQueue.setElevatorRequest(this.processedRequest);
+    /**
+     * Send the processed ElevatorEvent to the elevator queue in eventQueue
+     */
+    private void sendElevatorRequest()
+    {
+            System.out.println("Sending elevator event: " + processedRequest);
+            eventQueue.setElevatorRequest(processedRequest);
     }
 
     public void setReadFloorRequest() {
@@ -53,7 +79,7 @@ public class Scheduler implements Runnable {
         return this.eventQueue;
     }
 
-    public ElevatorEvent getfloorRequestToBeProcessed() {
+    public ElevatorEvent getFloorRequestToBeProcessed() {
         return this.floorRequestToBeProcessed;
     }
 
