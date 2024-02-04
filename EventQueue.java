@@ -1,99 +1,66 @@
+//
+// Source code recreated from a .class file by IntelliJ IDEA
+// (powered by FernFlower decompiler)
+//
+
 import java.util.ArrayDeque;
-/**
- * EventQueue class
- * This class is used as a way to synchronize the Elevator, Floor, and Scheduler threads
- *
- * @author Marwan Zeid
- * @version 2024-02-02
- */
 
 public class EventQueue {
-    private final ArrayDeque<ElevatorEvent> floorRequest;
-    private final ArrayDeque<ElevatorEvent> elevatorRequest;
+    private final ArrayDeque<ElevatorEvent> floorRequest = new ArrayDeque();
+    private final ArrayDeque<ElevatorEvent> elevatorRequest = new ArrayDeque();
     public int processedEvents = 0;
-    public int maxEvents = 6; // Max events for testing purposes
+    public int maxEvents = 6;
     private final int maxQueue = 3;
 
-    public EventQueue(){
-        floorRequest = new ArrayDeque<>();
-        elevatorRequest = new ArrayDeque<>();
+    public EventQueue() {
     }
 
-    /**
-     * Method holds the wait() function for synchronization purposes
-     */
-    private void mutex()
-    {
+    private void mutex() {
         try {
-            wait();
-        } catch (InterruptedException ignored) {}
-    }
-
-    /**
-     * Returns a floor request event that is currently stored in the scheduler
-     * @return Returns storedEvent as ElevatorEvent
-     */
-    public synchronized ElevatorEvent getFloorRequest()
-    {
-        if (floorRequest.isEmpty()) return null;
-
-        ElevatorEvent returningEvent = floorRequest.remove();
-        notifyAll();
-        return returningEvent;
-    }
-
-    /**
-     * Saves a floor request event in the scheduler.
-     *
-     * @param event The event to be stored
-     */
-    public synchronized void setFloorRequest(ElevatorEvent event)
-    {
-        while (!(floorRequest.size() < maxQueue))
-        {
-            mutex();
+            this.wait();
+        } catch (InterruptedException var2) {
         }
 
-        floorRequest.add(event);
-        notifyAll();
     }
 
-    /**
-     * Saves an elevator request event to the scheduler
-     *
-     * @param event The event to be stored
-     */
-    public synchronized void setElevatorRequest(ElevatorEvent event)
-    {
-        while (!(elevatorRequest.size() < maxQueue))
-        {
-            mutex();
+    public synchronized ElevatorEvent getFloorRequest() {
+        if (this.floorRequest.isEmpty()) {
+            return null;
+        } else {
+            ElevatorEvent returningEvent = (ElevatorEvent)this.floorRequest.remove();
+            this.notifyAll();
+            return returningEvent;
+        }
+    }
+
+    public synchronized void setFloorRequest(ElevatorEvent event) {
+        while(this.floorRequest.size() >= 3) {
+            this.mutex();
         }
 
-        elevatorRequest.add(event);
-        notifyAll();
+        this.floorRequest.add(event);
+        this.notifyAll();
     }
 
-    /**
-     * Returns an elevator request event currently stored by the scheduler
-     * @return Returns the current response
-     */
-    public synchronized ElevatorEvent getElevatorRequest()
-    {
-        while(elevatorRequest.isEmpty())
-        {
-            mutex();
+    public synchronized void setElevatorRequest(ElevatorEvent event) {
+        while(this.elevatorRequest.size() >= 3) {
+            this.mutex();
         }
 
-        return elevatorRequest.poll();
+        this.elevatorRequest.add(event);
+        this.notifyAll();
     }
 
-    /**
-     * Notify threads that elevator has reached the floor the event requested
-     */
-    public synchronized void elevatorArrived()
-    {
-        processedEvents++;
-        notifyAll();
+    public synchronized ElevatorEvent getElevatorRequest() {
+        while(this.elevatorRequest.isEmpty()) {
+            this.mutex();
+        }
+
+        return (ElevatorEvent)this.elevatorRequest.poll();
+    }
+
+    public synchronized void elevatorArrived() {
+        ++this.processedEvents;
+        this.notifyAll();
     }
 }
