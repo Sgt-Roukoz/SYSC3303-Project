@@ -1,39 +1,46 @@
-//
-// Source code recreated from a .class file by IntelliJ IDEA
-// (powered by FernFlower decompiler)
-//
+/**
+ * ElevatorEvent class
+ * encapsulates information required for an elevator subsystem to know its next course of action
+ *
+ * @author Marwan Zeid
+ * @version 2024-01-30
+ */
 
-public class ElevatorEvent {
+public class ElevatorEvent { //convert to Record?
     private final String time;
     private final int floor;
     private final ELEVATOR_BUTTON button;
     private final int car_button;
 
-    public ElevatorEvent(String time, int floor, ELEVATOR_BUTTON button, int car_button) {
+    //later add value for specific elevator
+
+    public ElevatorEvent(String time, int floor, ELEVATOR_BUTTON button, int car_button)
+    {
         this.time = time;
         this.floor = floor;
         this.button = button;
         this.car_button = car_button;
     }
 
-    public String toString() {
-        String var10000 = this.time;
-        return var10000 + " " + this.floor + " " + String.valueOf(this.button) + " " + this.car_button;
+    public String toString(){
+        return time + " " + floor + " " + button + " " + car_button;
     }
 
-    public String getTime() {
-        return this.time;
+    // Getters for each of the values
+    public String getTime()
+    {
+        return time;
     }
 
     public int getFloor() {
-        return this.floor;
+        return floor;
     }
 
     public ELEVATOR_BUTTON getButton() {
-        return this.button;
+        return button;
     }
 
     public int getCar_button() {
-        return this.car_button;
+        return car_button;
     }
 }
