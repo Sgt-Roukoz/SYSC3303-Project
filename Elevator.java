@@ -64,15 +64,15 @@ public class Elevator implements Runnable {
     private void processEvent(ElevatorEvent event) {
         try {
             System.out.println("Elevator " + elevatorId + ": Processing " + event);
-            if (currentFloor != event.getFloor()) {
-                moveToFloor(event.getFloor());
+            if (currentFloor != event.getSourceFloor()) {
+                moveToFloor(event.getSourceFloor());
                 openDoors();
                 Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors opening
                 closeDoors();
                 Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
             }
-            if (currentFloor != event.getCar_button()) {
-                moveToFloor(event.getCar_button());
+            if (currentFloor != event.getDestFloor()) {
+                moveToFloor(event.getDestFloor());
                 openDoors();
                 Thread.sleep(DOOR_OPERATION_TIME); // Simulate doors staying open for people to exit/enter
                 closeDoors();

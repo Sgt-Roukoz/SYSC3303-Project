@@ -8,22 +8,22 @@
 
 public class ElevatorEvent { //convert to Record?
     private final String time;
-    private final int floor;
+    private final int sourceFloor;
     private final ELEVATOR_BUTTON button;
-    private final int car_button;
+    private final int destFloor;
 
     //later add value for specific elevator
 
     public ElevatorEvent(String time, int floor, ELEVATOR_BUTTON button, int car_button)
     {
         this.time = time;
-        this.floor = floor;
+        this.sourceFloor = floor;
         this.button = button;
-        this.car_button = car_button;
+        this.destFloor = car_button;
     }
 
     public String toString(){
-        return time + " " + floor + " " + button + " " + car_button;
+        return time + " " + sourceFloor + " " + button + " " + destFloor;
     }
 
     // Getters for each of the values
@@ -32,15 +32,15 @@ public class ElevatorEvent { //convert to Record?
         return time;
     }
 
-    public int getFloor() {
-        return floor;
+    public int getSourceFloor() {
+        return sourceFloor;
     }
 
     public ELEVATOR_BUTTON getButton() {
         return button;
     }
 
-    public int getCar_button() {
-        return car_button;
+    public int getDestFloor() {
+        return destFloor;
     }
 }
