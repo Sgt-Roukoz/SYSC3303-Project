@@ -329,9 +329,6 @@ public class Elevator implements Runnable {
                         doorsClosed();
                         currentState.displayState();
                         break;
-                    default:
-                        System.out.println("Elevator is not in any recognised state");
-                        currentState.displayState();
                 }
 
             } catch (Exception e) {
@@ -417,9 +414,11 @@ public class Elevator implements Runnable {
     public void setCloseDoors() {doorsOpen = false;}
     public boolean getDoorBoolean() {return doorsOpen;}
     public void setNotifySchedulerOfArrival() {eventQueue.elevatorArrived();}
-/*
+
     public static void main(String[] args) {
-        Elevator elevator = new Elevator();
+        EventQueue eventQueue = new EventQueue();
+        Scheduler scheduler = new Scheduler(eventQueue);
+        Elevator elevator = new Elevator(eventQueue, 1);
 
         elevator.floorRequested();
 
@@ -431,6 +430,6 @@ public class Elevator implements Runnable {
 
         elevator.doorsClosed();
 
-    }*/
+    }
 }
 
