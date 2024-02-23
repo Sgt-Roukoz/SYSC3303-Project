@@ -10,6 +10,9 @@ import java.util.Map;
  * @version 2024-02-02
  */
 
+/**
+ * Interface representing an abstraction of all Elevator states
+ * */
 interface ElevatorState{
     void floorRequest(Elevator context);
 
@@ -25,11 +28,14 @@ interface ElevatorState{
 
 }
 
+/**
+ * Concrete class implementation of the ElevatorState interface representing the Idle state
+ * */
 class Idle implements ElevatorState{
     @Override
     public void floorRequest(Elevator context) {
         System.out.println("Floor requested.");
-        context.setCurrentState("MovingToFloor", false);
+        context.setCurrentState("MovingToFloor");
     }
 
     @Override
@@ -56,6 +62,10 @@ class Idle implements ElevatorState{
         System.out.println("Elevator is idle.");
     }
 }
+
+/**
+ * Concrete class implementation of the ElevatorState interface representing the MovingToFloor state
+ * */
 class MovingToFloor implements ElevatorState{
     @Override
     public void floorRequest(Elevator context) {
@@ -65,7 +75,7 @@ class MovingToFloor implements ElevatorState{
     @Override
     public void arrivedAtFloor(Elevator context){
         System.out.println("Elevator arrived at loading floor.");
-        context.setCurrentState("Loading", true);
+        context.setCurrentState("Loading");
     }
 
     @Override
@@ -88,6 +98,9 @@ class MovingToFloor implements ElevatorState{
     }
 }
 
+/**
+ * Concrete class implementation of the ElevatorState interface representing the MovingToDestination state
+ * */
 class MovingToDestination implements ElevatorState{
     @Override
     public void floorRequest(Elevator context) {
@@ -107,7 +120,7 @@ class MovingToDestination implements ElevatorState{
     @Override
     public void arrivedAtDestination(Elevator context){
         System.out.println("Elevator arrived at destination floor.");
-        context.setCurrentState("Unloading", true);
+        context.setCurrentState("Unloading");
     }
 
     @Override
@@ -120,6 +133,9 @@ class MovingToDestination implements ElevatorState{
     }
 }
 
+/**
+ * Concrete class implementation of the ElevatorState interface representing the Loading state
+ * */
 class Loading implements ElevatorState{
     @Override
     public void floorRequest(Elevator context) {
@@ -134,7 +150,7 @@ class Loading implements ElevatorState{
     @Override
     public void destinationRequest(Elevator context){
         System.out.println("Destination floor requested.");
-        context.setCurrentState("MovingToDestination", false);
+        context.setCurrentState("MovingToDestination");
     }
 
     @Override
@@ -152,6 +168,9 @@ class Loading implements ElevatorState{
     }
 }
 
+/**
+ * Concrete class implementation of the ElevatorState interface representing the Unloading state
+ * */
 class Unloading implements ElevatorState{
     @Override
     public void floorRequest(Elevator context) {
@@ -176,7 +195,7 @@ class Unloading implements ElevatorState{
     @Override
     public void doorsClosed(Elevator context){
         System.out.println("Elevator doors now closed.");
-        context.setCurrentState("Idle", false);
+        context.setCurrentState("Idle");
     }
     @Override
     public void displayState() {
@@ -197,8 +216,6 @@ public class Elevator implements Runnable {
 
     private Map<String, ElevatorState> states;
     private ElevatorState currentState;
-
-    //private Boolean doorsOpen;
 
     /**
      * Constructs an Elevator object with a specified Scheduler and elevator ID.
@@ -223,32 +240,52 @@ public class Elevator implements Runnable {
         currentState = states.get("Idle");
     }
 
+    /**
+     * Method to call the floorRequest event handling method (for transitioning from Idle to MovingToFloor)
+     * */
     public void floorRequested() {
         currentState.floorRequest(this);
         currentState.displayState();
     }
 
+    /**
+     * Method to call the arrivedAtFloor event handling method (for transitioning from MovingToFloor to Loading)
+     * */
     public void arrivedAtFloor(){
         currentState.arrivedAtFloor(this);
         currentState.displayState();
     }
 
+    /**
+     * Method to call the destinationRequest event handling method (for transitioning from Loading to MovingToDestination)
+     * */
     public void destinationRequest(){
         currentState.destinationRequest(this);
         currentState.displayState();
     }
 
+    /**
+     * Method to call the arrivedAtDestination event handling method (for transitioning from MovingToDestination to Unloading)
+     * */
     public void arrivedAtDestination(){
         currentState.arrivedAtDestination(this);
         currentState.displayState();
     }
 
+    /**
+     * Method to call the doorsClosed event handling method (for transitioning from Unloading to Idle)
+     * */
     public void doorsClosed(){
         currentState.doorsClosed(this);
         currentState.displayState();
     }
 
-    public void setCurrentState(String nextState, boolean doors){
+    /**
+     * Method to call the floorRequest event handling method (for transitioning from Idle to MovingToFloor)
+     *
+     * @param nextState The string representation of what the state to come after the current one is
+     */
+    public void setCurrentState(String nextState){
         this.currentState = states.get(nextState);
     }
 
