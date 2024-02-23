@@ -7,7 +7,7 @@
  */
 
 public class Scheduler implements Runnable {
-    private enum SchedulerState {
+    public enum SchedulerState {
         IDLE,
         PROCESSING_COMMAND,
         WAITING
@@ -41,25 +41,32 @@ public class Scheduler implements Runnable {
 
     @Override
     public void run() {
-        while (eventQueue.processedEvents < eventQueue.maxEvents) {
-            switch (state) {
-                case IDLE:
-                    readFloorRequest();
-                    if (floorRequestToBeProcessed != null) {
-                        System.out.println("Scheduler State: " + floorRequestToBeProcessed + ": Idle");
-                        state = SchedulerState.PROCESSING_COMMAND;
-                    }
-                    break;
-                case PROCESSING_COMMAND:
-                    System.out.println("Scheduler State: PROCESSING_COMMAND");
-                    processFloorRequest();
-                    sendElevatorRequest();
-                    state = SchedulerState.WAITING;
-                    break;
-                case WAITING:
-                    System.out.println("Scheduler State: WAITING");
-                    state = SchedulerState.IDLE;
-                    break;
+        while (eventQueue.processedEvents < eventQueue.maxEvents && !Thread.interrupted()) {
+            try {
+                switch (state) {
+                    case IDLE:
+                        readFloorRequest();
+                        if (floorRequestToBeProcessed != null) {
+                            System.out.println("Scheduler State: " + floorRequestToBeProcessed + ": Idle");
+                            state = SchedulerState.PROCESSING_COMMAND;
+                        }
+                        break;
+                    case PROCESSING_COMMAND:
+                        System.out.println("Scheduler State: PROCESSING_COMMAND");
+                        Thread.sleep(15);
+                        processFloorRequest();
+                        sendElevatorRequest();
+                        state = SchedulerState.WAITING;
+                        break;
+                    case WAITING:
+                        System.out.println("Scheduler State: WAITING");
+                        Thread.sleep(15);
+                        state = SchedulerState.IDLE;
+                        break;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                System.out.println("Scheduler was interrupted.");
             }
         }
     }
@@ -75,7 +82,7 @@ public class Scheduler implements Runnable {
      * Process the ElevatorEvent request and convert into an event usable by Elevator
      */
     private void processFloorRequest() {
-        //do stuff, functionality ot be added in later iteration
+        //do stuff, functionality to be added in later iteration
 
         System.out.println("Scheduler: Processing floor event: " + floorRequestToBeProcessed);
         processedRequest = floorRequestToBeProcessed;
@@ -90,6 +97,9 @@ public class Scheduler implements Runnable {
         // eventQueue.processedEvents++;
     }
 
+    /*
+    Setters and getters for testing purposes
+     */
     public void setReadFloorRequest() {
         this.floorRequestToBeProcessed = this.eventQueue.getFloorRequest();
     }
@@ -102,10 +112,6 @@ public class Scheduler implements Runnable {
         this.eventQueue.setElevatorRequest(this.processedRequest);
     }
 
-    public EventQueue getEventQueue() {
-        return this.eventQueue;
-    }
-
     public ElevatorEvent getFloorRequestToBeProcessed() {
         return this.floorRequestToBeProcessed;
     }
@@ -114,6 +120,10 @@ public class Scheduler implements Runnable {
         return this.processedRequest;
     }
 
+    public SchedulerState getState()
+    {
+        return state;
+    }
 
 
     // public static void main(String[] args) {
