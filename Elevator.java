@@ -14,6 +14,7 @@ import java.util.Map;
  * Interface representing an abstraction of all Elevator states
  * */
 interface ElevatorState{
+
     void floorRequest(Elevator context);
 
     void arrivedAtFloor(Elevator context);
@@ -34,8 +35,14 @@ interface ElevatorState{
 class Idle implements ElevatorState{
     @Override
     public void floorRequest(Elevator context) {
-        System.out.println("Floor requested.");
-        context.setCurrentState("MovingToFloor");
+        try {
+            System.out.println(context.getCurrentEvent().getSourceFloor() + "th floor requested.");
+            context.setCurrentState("MovingToFloor");
+            context.moveToFloor(context.getCurrentEvent().getSourceFloor());
+        }catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
     }
 
     @Override
@@ -61,6 +68,11 @@ class Idle implements ElevatorState{
     public void displayState() {
         System.out.println("Elevator is idle.");
     }
+
+    @Override
+    public String toString(){
+        return "Idle";
+    }
 }
 
 /**
@@ -74,8 +86,15 @@ class MovingToFloor implements ElevatorState{
 
     @Override
     public void arrivedAtFloor(Elevator context){
-        System.out.println("Elevator arrived at loading floor.");
-        context.setCurrentState("Loading");
+        try{
+            System.out.println("Elevator arrived at loading floor.");
+            context.setCurrentState("Loading");
+            context.openDoors();
+            Thread.sleep(Elevator.DOOR_OPERATION_TIME / 2); // Simulate doors opening
+        }catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
     }
 
     @Override
@@ -95,6 +114,11 @@ class MovingToFloor implements ElevatorState{
     @Override
     public void displayState() {
         System.out.println("Elevator is moving.");
+    }
+
+    @Override
+    public String toString(){
+        return "MovingToFloor";
     }
 }
 
@@ -119,8 +143,17 @@ class MovingToDestination implements ElevatorState{
 
     @Override
     public void arrivedAtDestination(Elevator context){
-        System.out.println("Elevator arrived at destination floor.");
-        context.setCurrentState("Unloading");
+        try{
+            System.out.println("Elevator arrived at destination floor.");
+            context.setCurrentState("Unloading");
+            context.openDoors();
+            Thread.sleep(Elevator.DOOR_OPERATION_TIME); // Simulate doors staying open for people to exit/enter
+            context.notifySchedulerOfArrival();
+        }catch(InterruptedException e){
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
+
     }
 
     @Override
@@ -130,6 +163,11 @@ class MovingToDestination implements ElevatorState{
     @Override
     public void displayState() {
         System.out.println("Elevator is moving to destination.");
+    }
+
+    @Override
+    public String toString(){
+        return "MovingToDestination";
     }
 }
 
@@ -149,8 +187,16 @@ class Loading implements ElevatorState{
 
     @Override
     public void destinationRequest(Elevator context){
-        System.out.println("Destination floor requested.");
-        context.setCurrentState("MovingToDestination");
+        try {
+            context.closeDoors();
+            Thread.sleep(Elevator.DOOR_OPERATION_TIME / 2); // Simulate doors closing
+            System.out.println("Destination floor requested.");
+            context.moveToFloor(context.getCurrentEvent().getDestFloor());
+            context.setCurrentState("MovingToDestination");
+        }catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
     }
 
     @Override
@@ -165,6 +211,11 @@ class Loading implements ElevatorState{
     @Override
     public void displayState() {
         System.out.println("Elevator is loading passengers.");
+    }
+
+    @Override
+    public String toString(){
+        return "Loading";
     }
 }
 
@@ -194,27 +245,38 @@ class Unloading implements ElevatorState{
 
     @Override
     public void doorsClosed(Elevator context){
-        System.out.println("Elevator doors now closed.");
-        context.setCurrentState("Idle");
+        try{
+            context.closeDoors();
+            System.out.println("Elevator doors now closed.");
+            context.setCurrentState("Idle");
+        }catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
     }
     @Override
     public void displayState() {
         System.out.println("Elevator is idle.");
+    }
+
+    @Override
+    public String toString(){
+        return "Unloading";
     }
 }
 
 public class Elevator implements Runnable {
 
     private static final long TIME_PER_FLOOR = 8000; // Average time per floor in milliseconds
-    private static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
+    protected static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
 
     private int currentFloor;
     private final int elevatorId;
     private final EventQueue eventQueue;
-
+    private ElevatorEvent currentEvent;
     private boolean doorsOpen;
 
-    private Map<String, ElevatorState> states;
+    private final Map<String, ElevatorState> states;
     private ElevatorState currentState;
 
     /**
@@ -238,6 +300,12 @@ public class Elevator implements Runnable {
         states.put("Unloading", new Unloading());
 
         currentState = states.get("Idle");
+        currentEvent = null;
+
+    }
+
+    public int getElevatorId(){
+        return elevatorId;
     }
 
     /**
@@ -302,30 +370,27 @@ public class Elevator implements Runnable {
                 ElevatorEvent event = eventQueue.getElevatorRequest();
                 if (event != null) {
                     System.out.println("Elevator " + elevatorId + " received event: " + event);
+                    currentEvent = event;
+                    //processEvent(event);
                 }
                 switch(currentState.toString()){
                     case "Idle":
-                        processEvent(event);
                         floorRequested();
                         currentState.displayState();
                         break;
                     case "MovingToFloor":
-                        processEvent(event);
                         arrivedAtFloor();
                         currentState.displayState();
                         break;
                     case "Loading":
-                        processEvent(event);
                         destinationRequest();
                         currentState.displayState();
                         break;
                     case "MovingToDestination":
-                        processEvent(event);
                         arrivedAtDestination();
                         currentState.displayState();
                         break;
                     case "Unloading":
-                        processEvent(event);
                         doorsClosed();
                         currentState.displayState();
                         break;
@@ -338,14 +403,24 @@ public class Elevator implements Runnable {
         }
     }
 
+    public ElevatorEvent getCurrentEvent(){
+        return this.currentEvent;
+    }
+
+    public void setCurrentEvent(ElevatorEvent event){
+        this.currentEvent = event;
+    }
+
     /**
      * Processes an event received from the Scheduler. Depending on the event type,
      * the elevator will move to the requested floor and open/close its doors.
      *
      * @param event The ElevatorEvent to process.
      */
+    /*
     private void processEvent(ElevatorEvent event) {
         try {
+            this.currentEvent = event;
             System.out.println("Elevator " + elevatorId + ": Processing " + event);
             if (currentFloor != event.getSourceFloor()) {
                 moveToFloor(event.getSourceFloor());
@@ -365,7 +440,7 @@ public class Elevator implements Runnable {
             Thread.currentThread().interrupt();
             System.out.println("Elevator " + elevatorId + " was interrupted.");
         }
-    }
+    }*/
 
     /**
      * Simulates the movement of the elevator to a specified floor.
@@ -374,7 +449,7 @@ public class Elevator implements Runnable {
      * @param floor The target floor to which the elevator should move.
      * @throws InterruptedException if the thread is interrupted while sleeping.
      */
-    private void moveToFloor(int floor) throws InterruptedException {
+    protected void moveToFloor(int floor) throws InterruptedException {
         int floorDifference = Math.abs(floor - currentFloor);
         long travelTime = floorDifference * TIME_PER_FLOOR;
         System.out.println("Elevator " + elevatorId + " moving from floor " + currentFloor + " to floor " + floor);
@@ -387,7 +462,7 @@ public class Elevator implements Runnable {
      * Notifies the Scheduler of the elevator's arrival at a floor.
      * This method constructs an arrival event and sends it to the Scheduler.
      */
-   private void notifySchedulerOfArrival() {
+   protected void notifySchedulerOfArrival() {
         System.out.println("Elevator " + elevatorId + " notifying scheduler of arrival at floor " + currentFloor);
         eventQueue.elevatorArrived();
     }
@@ -395,7 +470,7 @@ public class Elevator implements Runnable {
     /**
      * Simulates opening the elevator doors.
      */
-    private void openDoors() throws InterruptedException {
+    protected void openDoors() throws InterruptedException {
         System.out.println("Elevator " + elevatorId + " doors opening.");
         doorsOpen = true;
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors opening
@@ -404,7 +479,7 @@ public class Elevator implements Runnable {
     /**
      * Simulates closing the elevator doors.
      */
-    private void closeDoors() throws InterruptedException {
+    protected void closeDoors() throws InterruptedException {
         System.out.println("Elevator " + elevatorId + " doors closing.");
         doorsOpen = false;
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
