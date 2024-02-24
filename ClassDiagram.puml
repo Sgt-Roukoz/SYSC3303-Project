@@ -34,6 +34,22 @@ destinationRequest(context:Elevator): void
 arrivedAtDestination(context:Elevator): void
 doorsClosed(context:Elevator): void
 displayState(): void
+toString(): String
+}
+
+class Idle implements ElevatorState {
+}
+
+class MovingToFloor implements ElevatorState {
+}
+
+class MovingToDestination implements ElevatorState {
+}
+
+class Loading implements ElevatorState {
+}
+
+class Unloading implements ElevatorState {
 }
 
 class Elevator implements Runnable {
@@ -42,10 +58,21 @@ class Elevator implements Runnable {
 -currentFloor: int
 -elevatorId: int {readOnly}
 -eventQueue: EventQueue {readOnly}
+-currentEvent: ElevatorEvent
 -doorsOpen: boolean
+-states: Map<String, ElevatorState> {readOnly}
+-currentState: ElevatorState
 
 +Elevator(eventQueue: EventQueue, elevatorId: int)
 +run(): void
++getElevatorId(): int
++floorRequested(): void
++arrivedAtFloor(): void
++destinationRequest(): void
++arrivedAtDestination(): void
++doorsClosed(): void
++setCurrentState(nextState: String): void
++getCurrentEvent(): ElevatorEvent
 -processEvent(event: ElevatorEvent): void
 -moveToFloor(floor: int) throws InterruptedException : void
 -notifySchedulerOfArrival(): void

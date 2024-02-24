@@ -29,6 +29,8 @@ interface ElevatorState{
 
     void displayState();
 
+    String toString();
+
 }
 
 /**
