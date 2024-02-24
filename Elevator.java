@@ -1,6 +1,3 @@
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Elevator class simulates the behavior of an elevator car within the elevator subsystem.
  * It processes events from the scheduler to perform actions such as moving to specific floors,
@@ -9,6 +6,9 @@ import java.util.Map;
  * @author Adham Elmahi
  * @version 2024-02-02
  */
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Interface representing an abstraction of all Elevator states
