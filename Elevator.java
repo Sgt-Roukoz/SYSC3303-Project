@@ -43,7 +43,6 @@ class Idle implements ElevatorState{
 
     @Override
     public void floorRequest(Elevator context) {
-        System.out.println(context.getCurrentEvent().getSourceFloor() + "th floor requested.");
         context.setCurrentState("MovingToFloor");
     }
 
@@ -84,12 +83,16 @@ class MovingToFloor implements ElevatorState{
     @Override
     public void entry(Elevator context) {
         try {
-            context.moveToFloor(context.getCurrentEvent().getSourceFloor());
+            if (context.getCurrentEvent() != null) {
+                System.out.println(context.getCurrentEvent().getSourceFloor() + "th floor requested.");
+                context.moveToFloor(context.getCurrentEvent().getSourceFloor());
+            }
         }catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
         }
-        context.arrivedAtFloor();
+        if (context.getCurrentEvent() != null)
+            context.arrivedAtFloor();
     }
 
     @Override
@@ -134,13 +137,16 @@ class MovingToDestination implements ElevatorState{
     @Override
     public void entry(Elevator context) {
         try {
-            context.closeDoors();
-            context.moveToFloor(context.getCurrentEvent().getDestFloor());
+            if (context.getCurrentEvent() != null) {
+                context.closeDoors();
+                context.moveToFloor(context.getCurrentEvent().getDestFloor());
+            }
         }catch (InterruptedException e){
             Thread.currentThread().interrupt();
             System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
         }
-        context.arrivedAtDestination();
+        if (context.getCurrentEvent() != null)
+            context.arrivedAtDestination();
     }
 
     @Override
@@ -190,7 +196,8 @@ class Loading implements ElevatorState{
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        context.destinationRequest();
+        if (context.getCurrentEvent() != null)
+            context.destinationRequest();
     }
 
     @Override
@@ -242,7 +249,8 @@ class Unloading implements ElevatorState{
             Thread.currentThread().interrupt();
             System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
         }
-        context.doorsClosed();
+        if (context.getCurrentEvent() != null)
+            context.doorsClosed();
         context.notifySchedulerOfArrival();
     }
 
@@ -457,11 +465,13 @@ public class Elevator implements Runnable {
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
     }
 
+
+    //Setters and getters for Testing purposes
     public void setOpenDoors() {doorsOpen = true;}
     public void setCloseDoors() {doorsOpen = false;}
     public boolean getDoorBoolean() {return doorsOpen;}
     public void setNotifySchedulerOfArrival() {eventQueue.elevatorArrived();}
-
+    public String getCurrentState(){return currentState.toString();}
 //    public static void main(String[] args) {
 //        EventQueue eventQueue = new EventQueue();
 //        Scheduler scheduler = new Scheduler(eventQueue);

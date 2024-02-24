@@ -44,19 +44,19 @@ class SchedulerTest {
         Thread testThread = new Thread(scheduler);
         testThread.start();
         t1.setFloorRequest(new ElevatorEvent("14:05:15.0", 2, ELEVATOR_BUTTON.UP, 4));
-        Assertions.assertEquals(scheduler.getState(), Scheduler.SchedulerState.IDLE);
+        Assertions.assertEquals(Scheduler.SchedulerState.IDLE, scheduler.getState());
         try {
-            Thread.sleep(10);
+            Thread.sleep(5);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertEquals(scheduler.getState(), Scheduler.SchedulerState.PROCESSING_COMMAND);
+        Assertions.assertEquals(Scheduler.SchedulerState.PROCESSING_COMMAND, scheduler.getState());
         try {
-            Thread.sleep(10);
+            Thread.sleep(15);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
-        Assertions.assertEquals(scheduler.getState(), Scheduler.SchedulerState.WAITING);
+        Assertions.assertEquals(Scheduler.SchedulerState.WAITING, scheduler.getState());
         testThread.interrupt();
     }
 }
