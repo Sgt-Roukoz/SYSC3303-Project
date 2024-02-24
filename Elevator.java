@@ -15,6 +15,8 @@ import java.util.Map;
  * */
 interface ElevatorState{
 
+    void entry(Elevator context);
+
     void floorRequest(Elevator context);
 
     void arrivedAtFloor(Elevator context);
@@ -34,15 +36,15 @@ interface ElevatorState{
  * */
 class Idle implements ElevatorState{
     @Override
+    public void entry(Elevator context) {
+        System.out.println("Elevator doors are closed.");
+        System.out.println("Elevator is Idle");
+    }
+
+    @Override
     public void floorRequest(Elevator context) {
-        try {
-            System.out.println(context.getCurrentEvent().getSourceFloor() + "th floor requested.");
-            context.setCurrentState("MovingToFloor");
-            context.moveToFloor(context.getCurrentEvent().getSourceFloor());
-        }catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
-        }
+        System.out.println(context.getCurrentEvent().getSourceFloor() + "th floor requested.");
+        context.setCurrentState("MovingToFloor");
     }
 
     @Override
@@ -66,7 +68,7 @@ class Idle implements ElevatorState{
     }
     @Override
     public void displayState() {
-        System.out.println("Elevator is idle.");
+        //System.out.println("Elevator is idle.");
     }
 
     @Override
@@ -80,21 +82,24 @@ class Idle implements ElevatorState{
  * */
 class MovingToFloor implements ElevatorState{
     @Override
+    public void entry(Elevator context) {
+        try {
+            context.moveToFloor(context.getCurrentEvent().getSourceFloor());
+        }catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
+        context.arrivedAtFloor();
+    }
+
+    @Override
     public void floorRequest(Elevator context) {
         System.out.println("Elevator is still moving.");
     }
 
     @Override
     public void arrivedAtFloor(Elevator context){
-        try{
-            System.out.println("Elevator arrived at loading floor.");
             context.setCurrentState("Loading");
-            context.openDoors();
-            Thread.sleep(Elevator.DOOR_OPERATION_TIME / 2); // Simulate doors opening
-        }catch (InterruptedException e){
-            Thread.currentThread().interrupt();
-            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
-        }
     }
 
     @Override
@@ -127,6 +132,18 @@ class MovingToFloor implements ElevatorState{
  * */
 class MovingToDestination implements ElevatorState{
     @Override
+    public void entry(Elevator context) {
+        try {
+            context.closeDoors();
+            context.moveToFloor(context.getCurrentEvent().getDestFloor());
+        }catch (InterruptedException e){
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
+        context.arrivedAtDestination();
+    }
+
+    @Override
     public void floorRequest(Elevator context) {
         System.out.println("Elevator is still moving to destination.");
     }
@@ -143,17 +160,8 @@ class MovingToDestination implements ElevatorState{
 
     @Override
     public void arrivedAtDestination(Elevator context){
-        try{
-            context.openDoors();
-            Thread.sleep(Elevator.DOOR_OPERATION_TIME); // Simulate doors staying open for people to exit/enter
-            context.notifySchedulerOfArrival();
-            System.out.println("Elevator arrived at destination floor.");
-            context.setCurrentState("Unloading");
-        }catch(InterruptedException e){
-            Thread.currentThread().interrupt();
-            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
-        }
-
+        System.out.println("Elevator arrived at destination floor.");
+        context.setCurrentState("Unloading");
     }
 
     @Override
@@ -176,6 +184,16 @@ class MovingToDestination implements ElevatorState{
  * */
 class Loading implements ElevatorState{
     @Override
+    public void entry(Elevator context) {
+        try {
+            context.openDoors();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        context.destinationRequest();
+    }
+
+    @Override
     public void floorRequest(Elevator context) {
         System.out.println("Elevator is still loading passengers.");
     }
@@ -187,16 +205,8 @@ class Loading implements ElevatorState{
 
     @Override
     public void destinationRequest(Elevator context){
-        try {
-            context.closeDoors();
-            Thread.sleep(Elevator.DOOR_OPERATION_TIME / 2); // Simulate doors closing
-            System.out.println("Destination floor requested.");
-            context.moveToFloor(context.getCurrentEvent().getDestFloor());
-            context.setCurrentState("MovingToDestination");
-        }catch (InterruptedException e){
-            Thread.currentThread().interrupt();
-            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
-        }
+        System.out.println("Destination floor requested.");
+        context.setCurrentState("MovingToDestination");
     }
 
     @Override
@@ -224,6 +234,19 @@ class Loading implements ElevatorState{
  * */
 class Unloading implements ElevatorState{
     @Override
+    public void entry(Elevator context) {
+        try{
+            context.openDoors();
+            System.out.println("Elevator arrived at destination floor.");
+        }catch(InterruptedException e){
+            Thread.currentThread().interrupt();
+            System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
+        }
+        context.doorsClosed();
+        context.notifySchedulerOfArrival();
+    }
+
+    @Override
     public void floorRequest(Elevator context) {
         System.out.println("Elevator is still unload requested.");
     }
@@ -247,7 +270,6 @@ class Unloading implements ElevatorState{
     public void doorsClosed(Elevator context){
         try{
             context.closeDoors();
-            System.out.println("Elevator doors now closed.");
             context.setCurrentState("Idle");
         }catch (InterruptedException e){
             Thread.currentThread().interrupt();
@@ -267,8 +289,8 @@ class Unloading implements ElevatorState{
 
 public class Elevator implements Runnable {
 
-    private static final long TIME_PER_FLOOR = 8000; // Average time per floor in milliseconds
-    protected static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
+    private static final long TIME_PER_FLOOR = 2000; // Average time per floor in milliseconds
+    protected static final long DOOR_OPERATION_TIME = 6000; // Average door operation time in milliseconds
 
     private int currentFloor;
     private final int elevatorId;
@@ -355,6 +377,7 @@ public class Elevator implements Runnable {
      */
     public void setCurrentState(String nextState){
         this.currentState = states.get(nextState);
+        currentState.entry(this);
     }
 
 
@@ -371,27 +394,11 @@ public class Elevator implements Runnable {
                 if (event != null) {
                     System.out.println("Elevator " + elevatorId + " received event: " + event);
                     currentEvent = event;
+                    floorRequested();
                     //processEvent(event);
                 }
                 switch(currentState.toString()){
-                    case "Idle":
-                        floorRequested();
-                        currentState.displayState();
-                        break;
-                    case "MovingToFloor":
-                        arrivedAtFloor();
-                        currentState.displayState();
-                        break;
-                    case "Loading":
-                        destinationRequest();
-                        currentState.displayState();
-                        break;
-                    case "MovingToDestination":
-                        arrivedAtDestination();
-                        currentState.displayState();
-                        break;
-                    case "Unloading":
-                        doorsClosed();
+                    case "Idle", "Unloading", "MovingToDestination", "Loading", "MovingToFloor":
                         currentState.displayState();
                         break;
                 }
