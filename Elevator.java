@@ -289,8 +289,8 @@ class Unloading implements ElevatorState{
 
 public class Elevator implements Runnable {
 
-    private static final long TIME_PER_FLOOR = 2000; // Average time per floor in milliseconds
-    protected static final long DOOR_OPERATION_TIME = 6000; // Average door operation time in milliseconds
+    private static final long TIME_PER_FLOOR = 8000; // Average time per floor in milliseconds
+    protected static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
 
     private int currentFloor;
     private final int elevatorId;
@@ -414,38 +414,6 @@ public class Elevator implements Runnable {
         return this.currentEvent;
     }
 
-
-    /**
-     * Processes an event received from the Scheduler. Depending on the event type,
-     * the elevator will move to the requested floor and open/close its doors.
-     *
-     * @param event The ElevatorEvent to process.
-     */
-    /*
-    private void processEvent(ElevatorEvent event) {
-        try {
-            this.currentEvent = event;
-            System.out.println("Elevator " + elevatorId + ": Processing " + event);
-            if (currentFloor != event.getSourceFloor()) {
-                moveToFloor(event.getSourceFloor());
-                openDoors();
-                Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors opening
-                closeDoors();
-                Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
-            }
-            if (currentFloor != event.getDestFloor()) {
-                moveToFloor(event.getDestFloor());
-                openDoors();
-                Thread.sleep(DOOR_OPERATION_TIME); // Simulate doors staying open for people to exit/enter
-                closeDoors();
-            }
-            notifySchedulerOfArrival();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            System.out.println("Elevator " + elevatorId + " was interrupted.");
-        }
-    }*/
-
     /**
      * Simulates the movement of the elevator to a specified floor.
      * The movement is simulated by pausing the thread for a calculated duration.
@@ -494,21 +462,21 @@ public class Elevator implements Runnable {
     public boolean getDoorBoolean() {return doorsOpen;}
     public void setNotifySchedulerOfArrival() {eventQueue.elevatorArrived();}
 
-    public static void main(String[] args) {
-        EventQueue eventQueue = new EventQueue();
-        Scheduler scheduler = new Scheduler(eventQueue);
-        Elevator elevator = new Elevator(eventQueue, 1);
-
-        elevator.floorRequested();
-
-        elevator.arrivedAtFloor();
-
-        elevator.destinationRequest();
-
-        elevator.arrivedAtDestination();
-
-        elevator.doorsClosed();
-
-    }
+//    public static void main(String[] args) {
+//        EventQueue eventQueue = new EventQueue();
+//        Scheduler scheduler = new Scheduler(eventQueue);
+//        Elevator elevator = new Elevator(eventQueue, 1);
+//
+//        elevator.floorRequested();
+//
+//        elevator.arrivedAtFloor();
+//
+//        elevator.destinationRequest();
+//
+//        elevator.arrivedAtDestination();
+//
+//        elevator.doorsClosed();
+//
+//    }
 }
 
