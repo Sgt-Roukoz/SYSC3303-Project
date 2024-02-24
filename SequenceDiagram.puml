@@ -27,7 +27,7 @@ loop while processedEvents < maxEvents
             EventQueue --> Elevator: event: ElevatorEvent
         end
         alt event != null
-            Elevator -> Elevator: processEvent(event: ElevatorEvent)
+            Elevator -> Elevator: floorRequested()
         end
     end
 end

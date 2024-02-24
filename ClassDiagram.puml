@@ -7,9 +7,15 @@ class EventQueue
 class Floor
 class Main
 class Scheduler
+class Idle
+class MovingToFloor
+class MovingToDestination
+class Loading
+class Unloading
 enum ELEVATOR_BUTTON <<enumeration>>
 exception InterruptedException <<exception>>
 interface Runnable <<interface>>
+interface ElevatorState <<interface>>
 
 Scheduler *-- EventQueue
 Elevator *-- EventQueue
@@ -19,6 +25,16 @@ InterruptedException <|.. Elevator
 
 ELEVATOR_BUTTON <|.. ElevatorEvent
 ELEVATOR_BUTTON <|.. Floor
+
+interface ElevatorState {
+entry(context:Elevator): void
+floorRequest(context:Elevator): void
+arrivedAtFloor(context:Elevator): void
+destinationRequest(context:Elevator): void
+arrivedAtDestination(context:Elevator): void
+doorsClosed(context:Elevator): void
+displayState(): void
+}
 
 class Elevator implements Runnable {
 -{static} TIME_PER_FLOOR: long {readOnly}
@@ -92,6 +108,9 @@ class Main{
 }
 
 class Scheduler implements Runnable{
+
+-schedulerState: Enum
+-state: SchedulerState
 -eventQueue:EventQueue {readOnly}
 -floorRequestToBeProcessed: ElevatorEvent
 -processedRequest:ElevatorEvent
