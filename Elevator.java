@@ -144,11 +144,11 @@ class MovingToDestination implements ElevatorState{
     @Override
     public void arrivedAtDestination(Elevator context){
         try{
-            System.out.println("Elevator arrived at destination floor.");
-            context.setCurrentState("Unloading");
             context.openDoors();
             Thread.sleep(Elevator.DOOR_OPERATION_TIME); // Simulate doors staying open for people to exit/enter
             context.notifySchedulerOfArrival();
+            System.out.println("Elevator arrived at destination floor.");
+            context.setCurrentState("Unloading");
         }catch(InterruptedException e){
             Thread.currentThread().interrupt();
             System.out.println("Elevator " + context.getElevatorId() + " was interrupted.");
@@ -407,9 +407,6 @@ public class Elevator implements Runnable {
         return this.currentEvent;
     }
 
-    public void setCurrentEvent(ElevatorEvent event){
-        this.currentEvent = event;
-    }
 
     /**
      * Processes an event received from the Scheduler. Depending on the event type,
