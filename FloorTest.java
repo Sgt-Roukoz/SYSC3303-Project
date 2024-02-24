@@ -1,6 +1,14 @@
+/**
+ * Testing class for the Floor subsystem
+ */
+
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 class FloorTest {
+
+    /**
+     * Testing floor subsystem processing of string input
+     */
     @Test
     void processInput(){
         EventQueue eventQueue = new EventQueue();

@@ -1,3 +1,7 @@
+/**
+ * Testing class for the Scheduler subsystem
+ */
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +13,9 @@ class SchedulerTest {
     Scheduler scheduler;
     EventQueue t1;
 
+    /**
+     * Called before each test
+     */
     @BeforeEach
     void setUp()
     {
@@ -17,18 +24,27 @@ class SchedulerTest {
 
     }
 
+    /**
+     * Test reading floor requests
+     */
     @Test
     void testReadFloorRequest() {
         scheduler.setReadFloorRequest();
         Assertions.assertEquals(scheduler.getFloorRequestToBeProcessed(), t1.getFloorRequest());
     }
 
+    /**
+     * Testing processing floor requests
+     */
     @Test
     void testProcessFloorRequest() {
         scheduler.setProcessFloorRequest();
         Assertions.assertEquals(scheduler.getProcessedRequest(), scheduler.getFloorRequestToBeProcessed());
     }
 
+    /**
+     * Testing sending an elevator request
+     */
     @Test
     void testSendElevatorRequest() {
         t1.setFloorRequest(new ElevatorEvent("14:05:15.0", 2, ELEVATOR_BUTTON.UP, 4));
@@ -38,6 +54,9 @@ class SchedulerTest {
         Assertions.assertEquals(t1.getElevatorRequest(), scheduler.getProcessedRequest());
     }
 
+    /**
+     * Testing scheduler state machine transitions
+     */
     @Test
     void testStateChange()
     {

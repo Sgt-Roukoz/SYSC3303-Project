@@ -4,7 +4,9 @@
  * opening and closing doors, and signaling its current state
  *
  * @author Adham Elmahi
- * @version 2024-02-02
+ * @author Masrur Husain
+ * @author Marwan Zeid
+ * @version 2024-02-024
  */
 
 import java.util.HashMap;
@@ -15,18 +17,45 @@ import java.util.Map;
  * */
 interface ElevatorState{
 
+    /**
+     * The entry action, called when state is entered
+     * @param context The context of the elevator state machine
+     */
     void entry(Elevator context);
 
+    /**
+     * Handles the event when a floor request arrives
+     * @param context The context of the elevator state machine
+     */
     void floorRequest(Elevator context);
 
+    /**
+     * Handles the event when elevator arrives at source floor
+     * @param context The context of the elevator state machine
+     */
     void arrivedAtFloor(Elevator context);
 
+    /**
+     * Handles the event when a destination is requested
+     * @param context The context of the elevator state machine
+     */
     void destinationRequest(Elevator context);
 
+    /**
+     * Handles the event when elevator arrives at destination floor
+     * @param context The context of the elevator state machine
+     */
     void arrivedAtDestination(Elevator context);
 
+    /**
+     * Handles the event when elevator doors are requested to be closed
+     * @param context The context of the elevator state machine
+     */
     void doorsClosed(Elevator context);
 
+    /**
+     * Displays current state information
+     */
     void displayState();
 
     String toString();
@@ -474,21 +503,5 @@ public class Elevator implements Runnable {
     public boolean getDoorBoolean() {return doorsOpen;}
     public void setNotifySchedulerOfArrival() {eventQueue.elevatorArrived();}
     public String getCurrentState(){return currentState.toString();}
-//    public static void main(String[] args) {
-//        EventQueue eventQueue = new EventQueue();
-//        Scheduler scheduler = new Scheduler(eventQueue);
-//        Elevator elevator = new Elevator(eventQueue, 1);
-//
-//        elevator.floorRequested();
-//
-//        elevator.arrivedAtFloor();
-//
-//        elevator.destinationRequest();
-//
-//        elevator.arrivedAtDestination();
-//
-//        elevator.doorsClosed();
-//
-//    }
 }
 

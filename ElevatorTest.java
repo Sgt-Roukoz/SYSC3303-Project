@@ -1,3 +1,6 @@
+/**
+ * Testing class for the Elevator subsystem
+ */
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,6 +13,9 @@ class ElevatorTest {
     ElevatorTest() {
     }
 
+    /**
+     * Called before each test
+     */
     @BeforeEach
     void setUp()
     {
@@ -17,18 +23,27 @@ class ElevatorTest {
         testingElevator = new Elevator(eventQueue, 1);
     }
 
+    /**
+     * Testing door state after opening doors
+     */
     @Test
     void testOpenDoor() {
         testingElevator.setOpenDoors();
         Assertions.assertTrue(testingElevator.getDoorBoolean());
     }
 
+    /**
+     * Testing door state after closing doors
+     */
     @Test
     void testCloseDoor() {
         testingElevator.setCloseDoors();
         Assertions.assertFalse(testingElevator.getDoorBoolean());
     }
 
+    /**
+     * Testing elevator notifying scheduler of arrival
+     */
     @Test
     void TestNotifySchedulerOfArrival() {
         testingElevator.setNotifySchedulerOfArrival();
@@ -36,7 +51,7 @@ class ElevatorTest {
     }
 
     /**
-     * Testing State Machine transitions
+     * Testing Elevator State Machine transitions
      */
     @Test
     void testStateChanges()
