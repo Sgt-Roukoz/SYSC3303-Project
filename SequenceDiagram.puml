@@ -3,37 +3,37 @@
 
 autonumber
 
-activate Floor
-activate EventQueue
-activate Scheduler
-activate Elevator
+activate Main.Floor
+activate Main.EventQueue
+activate Main.Scheduler
+activate Main.Elevator
 loop while processedEvents < maxEvents
-    Floor -> Floor: processFile(file: File)
-    Floor -> Floor: processInput(input: String)
-    Floor --> EventQueue: setFloorRequest(event: ElevatorEvent)
+    Main.Floor -> Main.Floor: processFile(file: File)
+    Main.Floor -> Main.Floor: processInput(input: String)
+    Main.Floor --> Main.EventQueue: setFloorRequest(event: Main.ElevatorEvent)
 
     loop while processedEvents < maxEvents
-        Scheduler --> EventQueue: ReadFloorRequest()
-        EventQueue -> Scheduler: getFloorRequest(): ElevatorEvent
+        Main.Scheduler --> Main.EventQueue: ReadFloorRequest()
+        Main.EventQueue -> Main.Scheduler: getFloorRequest(): Main.ElevatorEvent
         alt floorRequestToBeProcessed != null
-            Scheduler -> Scheduler: processFloorRequest()
-            Scheduler --> EventQueue: sendElevatorRequest()
+            Main.Scheduler -> Main.Scheduler: processFloorRequest()
+            Main.Scheduler --> Main.EventQueue: sendElevatorRequest()
         end
     end
 
     loop while processedEvents < maxEvents
-        Elevator --> EventQueue: getElevatorRequest()
+        Main.Elevator --> Main.EventQueue: getElevatorRequest()
         alt elevatorRequest.isEmpty
-            EventQueue --> Elevator: event: ElevatorEvent
+            Main.EventQueue --> Main.Elevator: event: Main.ElevatorEvent
         end
         alt event != null
-            Elevator -> Elevator: processEvent(event: ElevatorEvent)
+            Main.Elevator -> Main.Elevator: floorRequested()
         end
     end
 end
 
-destroy Floor
-destroy EventQueue
-destroy Elevator
-destroy Scheduler
+destroy Main.Floor
+destroy Main.EventQueue
+destroy Main.Elevator
+destroy Main.Scheduler
 @enduml

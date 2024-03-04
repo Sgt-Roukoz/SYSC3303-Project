@@ -1,9 +1,12 @@
+package Main;
+
 /**
  * Scheduler class
  * Acts as a communication channel for the floor and elevator subsystems
  *
  * @author Garrison Su
- * @version 2024-02-22
+ * @author Marwan Zeid
+ * @version 2024-02-24
  */
 
 public class Scheduler implements Runnable {
@@ -27,18 +30,9 @@ public class Scheduler implements Runnable {
         this.state = SchedulerState.IDLE; // starting state
     }
 
-//    @Override
-//    public void run() {
-//        while (eventQueue.processedEvents < eventQueue.maxEvents) {
-//
-//            readFloorRequest();
-//            if (floorRequestToBeProcessed != null) {
-//                processFloorRequest();
-//                sendElevatorRequest();
-//            }
-//        }
-//    }
-
+    /**
+     * Main Scheduler subsystem run loop
+     */
     @Override
     public void run() {
         while (eventQueue.processedEvents < eventQueue.maxEvents && !Thread.interrupted()) {
@@ -124,22 +118,5 @@ public class Scheduler implements Runnable {
     {
         return state;
     }
-
-
-    // public static void main(String[] args) {
-    //     EventQueue eventQueue = new EventQueue();
-
-    //     // Simulate adding floor requests to the event queue
-    //     ElevatorEvent floorRequest = new ElevatorEvent("14:05:15.0", 2, ELEVATOR_BUTTON.UP, 4);
-    //     eventQueue.setFloorRequest(floorRequest);
-    //     ElevatorEvent floorRequest2 = new ElevatorEvent("17:05:20.0", 3, ELEVATOR_BUTTON.DOWN, 5);
-    //     eventQueue.setFloorRequest(floorRequest2);
-    //     ElevatorEvent floorRequest3 = new ElevatorEvent("18:05:15.0", 1, ELEVATOR_BUTTON.UP, 6);
-    //     eventQueue.setFloorRequest(floorRequest3);
-
-    //     Scheduler scheduler = new Scheduler(eventQueue);
-    //     scheduler.run();
-    //     System.out.println("All events finished!");
-    // }
 }
 

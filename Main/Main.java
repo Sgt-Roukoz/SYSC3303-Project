@@ -1,6 +1,7 @@
+package Main;
 
 /**
- * Dummy class
+ * Main Class, sets up all subsystems and starts them in the proper order.
  */
 
 public class Main {
