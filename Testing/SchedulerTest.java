@@ -1,7 +1,10 @@
 /**
- * Testing class for the Scheduler subsystem
+ * Testing class for the Main.Scheduler subsystem
  */
 
+package Testing;
+
+import Main.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -65,7 +68,7 @@ class SchedulerTest {
         t1.setFloorRequest(new ElevatorEvent("14:05:15.0", 2, ELEVATOR_BUTTON.UP, 4));
         Assertions.assertEquals(Scheduler.SchedulerState.IDLE, scheduler.getState());
         try {
-            Thread.sleep(5);
+            Thread.sleep(15);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

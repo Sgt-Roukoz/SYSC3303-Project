@@ -13,7 +13,7 @@
             <mxPoint x="420" y="224.86" as="targetPoint" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="j4LDjKllyJTs-Q91PW64-3" value="Idle" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+        <mxCell id="j4LDjKllyJTs-Q91PW64-3" value="Main.Idle" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
           <mxGeometry x="420" y="195" width="120" height="60" as="geometry" />
         </mxCell>
         <mxCell id="j4LDjKllyJTs-Q91PW64-4" value="Processing&lt;br&gt;Command" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">

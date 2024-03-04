@@ -9,6 +9,7 @@
  * @version 2024-02-024
  */
 
+package Main;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -328,8 +329,8 @@ class Unloading implements ElevatorState{
 
 public class Elevator implements Runnable {
 
-    private static final long TIME_PER_FLOOR = 8000; // Average time per floor in milliseconds
-    protected static final long DOOR_OPERATION_TIME = 11000; // Average door operation time in milliseconds
+    private static final long TIME_PER_FLOOR = 3000; // Average time per floor in milliseconds (Halved)
+    protected static final long DOOR_OPERATION_TIME = 5000; // Average door operation time in milliseconds (Halved)
 
     private int currentFloor;
     private final int elevatorId;

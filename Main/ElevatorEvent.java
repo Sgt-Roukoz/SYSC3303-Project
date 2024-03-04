@@ -1,3 +1,5 @@
+package Main;
+
 /**
  * ElevatorEvent class
  * encapsulates information required for an elevator subsystem to know its next course of action

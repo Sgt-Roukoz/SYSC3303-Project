@@ -1,3 +1,4 @@
+package Main;
 
 /**
  * Enum representing different types of buttons and actions within the elevator system.

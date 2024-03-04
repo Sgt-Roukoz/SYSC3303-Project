@@ -1,3 +1,5 @@
+package Main;
+
 /**
  * Scheduler class
  * Acts as a communication channel for the floor and elevator subsystems

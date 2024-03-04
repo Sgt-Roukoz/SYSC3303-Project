@@ -1,6 +1,10 @@
 /**
  * Testing class for the Elevator subsystem
  */
+
+package Testing;
+import Main.Elevator;
+import Main.EventQueue;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
