@@ -1,9 +1,10 @@
-package Main; /**
- * HelperFunctions class contains a variety of functions related to byte array manipulation for Server, Client, and Intermediate
+/**
+ * HelperFunctions class contains a variety of functions related to byte array manipulation
  *
  * @author Marwan Zeid
- * @verion 2024-02-10
+ * @verion 2024-03-05
  */
+package Main;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,11 +25,15 @@ public class HelperFunctions {
         byte aZero = 48;
         byte aOne = 49;
         byte aTwo = 50;
+        byte aThree = 51;
+        byte aFour = 52;
 
         msgToSend.replaceAll(e -> {
             if (e == aZero) e = (byte) 0;
             else if (e == aOne) e = (byte) 1;
             else if (e == aTwo) e = (byte) 2;
+            else if (e == aThree) e = (byte) 3;
+            else if (e == aFour) e = (byte) 4;
             return e;
         });
 
@@ -74,19 +79,19 @@ public class HelperFunctions {
         //check if: number of 0 bytes == 3, second byte is 1 or 2, last byte is 0 and there is text before it
 
         //check specific bytes (0, 1 and final byte):
-        if ((msg[0] != 0 || msg[len-1] != 0 || msg[len-2] < 45) || (msg[1] != 1 && msg[1] != 2)) return false;
+        if ((msg[0] != 0 || msg[len-1] != 0 || msg[len-2] < 45) || (msg[1] != 1 && msg[1] != 2 && msg[1] != 3 && msg[1] != 4)) return false;
 
         int zeroCount = 0;
         int invalidCharacterCount = 0;
         //check number of 0 bytes
         for (int i = 0; i < len; i++)
         {
-            if (msg[i] == 0) zeroCount++;
-            else if (msg[i] < 46) invalidCharacterCount ++;
+            //if (msg[i] == 0) zeroCount++;
+            if (msg[i] < 46) invalidCharacterCount ++;
         }
 
         if (invalidCharacterCount > 1) return false;
-        return zeroCount == 3;
+        return true;
     }
 
     /**
