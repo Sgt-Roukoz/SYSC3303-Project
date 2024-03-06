@@ -20,7 +20,7 @@ public class Floor extends Thread{
     private final int MAX_FLOORS = 22;
     private final Random rand;
     private final DatagramSocket socket;
-    private final DatagramPacket packet;
+    private DatagramPacket packet;
 
     public Floor(String name, EventQueue eventQueue) {
         super(name);
@@ -60,9 +60,20 @@ public class Floor extends Thread{
      */
     public void processInput(String input) {
         String[] split = input.split(" ");
-        if(split[2].equalsIgnoreCase("UP")) System.out.println("Floor " + split[3] + " up lamp on");
-        else System.out.println("Floor " + split[3] + " down lamp on");
-        byte[] msg = new byte[100];
+        String msg = "01";
+        msg += split[1];
+        if(split[2].equalsIgnoreCase("UP")) {
+            System.out.println("Floor " + split[3] + " up lamp on");
+            msg += "UP";
+        }
+        else {
+            System.out.println("Floor " + split[3] + " down lamp on");
+            msg += "DN";
+        }
+        msg += split[3];
+        byte[] byteMsg = HelperFunctions.generateMsg(msg);
+        packet = new DatagramPacket(byteMsg, byteMsg.length);
+
         //TODO: send UDP
         /*ElevatorEvent event = new ElevatorEvent(split[0], Integer.valueOf(split[1]), ELEVATOR_BUTTON.valueOf(split[2].toUpperCase()), Integer.valueOf(split[3]));
         System.out.println("Floor sending event: " + event );
