@@ -17,6 +17,7 @@ public class Floor extends Thread{
     boolean elevatorArrived;
     private final EventQueue eventQueue;
 
+
     public Floor(String name, EventQueue eventQueue) {
         super(name);
         this.eventQueue = eventQueue;
