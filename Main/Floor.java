@@ -2,9 +2,8 @@ package Main;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.SocketException;
+import java.io.IOException;
+import java.net.*;
 import java.util.Random;
 import java.util.Scanner;
 
@@ -71,10 +70,17 @@ public class Floor extends Thread{
             msg += "DN";
         }
         msg += split[3];
+        msg += "0";
         byte[] byteMsg = HelperFunctions.generateMsg(msg);
-        packet = new DatagramPacket(byteMsg, byteMsg.length);
-
-        //TODO: send UDP
+        try {
+            packet = new DatagramPacket(byteMsg, 0, byteMsg.length, InetAddress.getLocalHost(), 5000);
+            HelperFunctions.printDataInfo(packet.getData(), packet.getLength());
+            socket.send(packet);
+        } catch (UnknownHostException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         /*ElevatorEvent event = new ElevatorEvent(split[0], Integer.valueOf(split[1]), ELEVATOR_BUTTON.valueOf(split[2].toUpperCase()), Integer.valueOf(split[3]));
         System.out.println("Floor sending event: " + event );
         eventQueue.setFloorRequest(event);*/
