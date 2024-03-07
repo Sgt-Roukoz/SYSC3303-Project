@@ -27,7 +27,7 @@ public class SchedulerReceiver implements Runnable {
 
                 // Handle message based on type
                 if (translatedMessage.startsWith("01")) { //FloorEvent message
-                    // Assuming the message is something like "0102UP0300" for FloorEvent
+                    // Assuming the message is something like "0102UP0300" for FloorEvent.
                     int sourceFloor = Integer.parseInt(translatedMessage.substring(2, 4));
                     String directionStr = translatedMessage.substring(4, 6); // "UP" or "DN"
                     int destinationFloor = Integer.parseInt(translatedMessage.substring(6, 8));
