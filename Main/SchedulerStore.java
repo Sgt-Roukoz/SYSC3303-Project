@@ -73,6 +73,27 @@ public class SchedulerStore {
     }
 
     /**
+     * Iterate over elevators to find which is the closest for a given request.
+     *
+     * @param floor The floor event containing the source floor. The elevator which is closest is the one that will be
+     *              chosen to service the request.
+     *
+     * @return Returns the elevator ID of the closest elevator
+     */
+    public int findClosest(ElevatorEvent floor) {
+        int previousFloor = (int) this.elevators.get(0).get(2);
+        int closestID = 0;
+        for (Map.Entry<Integer, ArrayList<Serializable>> entry : this.elevators.entrySet()) {
+            int check = (int) entry.getValue().get(2);
+            if((check - floor.getSourceFloor()) < (previousFloor - floor.getSourceFloor())){
+                previousFloor = check;
+                closestID = entry.getKey();
+            }
+        }
+        return closestID;
+    }
+
+    /**
      * Returns a floor request event that is currently stored in the scheduler
      * @return Returns storedEvent as ElevatorEvent
      */

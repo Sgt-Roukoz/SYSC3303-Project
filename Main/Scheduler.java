@@ -19,15 +19,17 @@ public class Scheduler implements Runnable {
     private final EventQueue eventQueue;
     private ElevatorEvent floorRequestToBeProcessed;
     private ElevatorEvent processedRequest;
+    private SchedulerStore store;
 
     /**
      * Scheduler class constructor
      *
      * @param eventQueue EventQueue object where various events will be stored
      */
-    public Scheduler(EventQueue eventQueue) {
+    public Scheduler(EventQueue eventQueue, SchedulerStore store) {
         this.eventQueue = eventQueue;
         this.state = SchedulerState.IDLE; // starting state
+        this.store = store;
     }
 
     /**
@@ -48,7 +50,8 @@ public class Scheduler implements Runnable {
                     case PROCESSING_COMMAND:
                         System.out.println("Scheduler State: PROCESSING_COMMAND");
                         Thread.sleep(15);
-                        processFloorRequest();
+                        ElevatorEvent newEvent;
+                        newEvent = processFloorRequest();
                         sendElevatorRequest();
                         state = SchedulerState.WAITING;
                         break;
@@ -75,11 +78,13 @@ public class Scheduler implements Runnable {
     /**
      * Process the ElevatorEvent request and convert into an event usable by Elevator
      */
-    private void processFloorRequest() {
-        //do stuff, functionality to be added in later iteration
+    private ElevatorEvent processFloorRequest() {
+        ElevatorEvent newEvent;
 
+        //toService = store.getElevators().get(store.findClosest(floorRequestToBeProcessed));
         System.out.println("Scheduler: Processing floor event: " + floorRequestToBeProcessed);
         processedRequest = floorRequestToBeProcessed;
+        return processedRequest;
     }
 
     /**
