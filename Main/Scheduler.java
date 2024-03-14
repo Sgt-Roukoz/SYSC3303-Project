@@ -6,6 +6,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * Scheduler class
@@ -30,6 +33,8 @@ public class Scheduler implements Runnable {
     private SchedulerStore store;
     int selectedElevator;
 
+    HashMap<Integer, Queue> destinations;
+
     /**
      * Scheduler class constructor
      *
@@ -39,6 +44,9 @@ public class Scheduler implements Runnable {
         this.eventQueue = eventQueue;
         this.state = SchedulerState.IDLE; // starting state
         this.store = store;
+        for(int i = 0; i < store.getElevators().size(); i++){
+            destinations.put(i, new LinkedList<Integer>());
+        }
         try {
             sendReceiveSocket = new DatagramSocket(100);
         } catch (SocketException se) {
@@ -145,6 +153,8 @@ public class Scheduler implements Runnable {
         int msgLen = receivePacket.getLength();
         System.out.println("Scheduler: ACK received:");
         HelperFunctions.printDataInfo(acknowledged, msgLen);
+
+        destinations.get(selectedElevator).add(processedRequest.getDestFloor());
 
         // eventQueue.processedEvents++;
     }
