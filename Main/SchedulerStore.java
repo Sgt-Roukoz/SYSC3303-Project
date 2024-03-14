@@ -85,7 +85,7 @@ public class SchedulerStore {
         int closestID = 0;
         for (Map.Entry<Integer, ArrayList<Serializable>> entry : this.elevators.entrySet()) {
             int check = (int) entry.getValue().get(2);
-            if((check - floor.getSourceFloor()) < (previousFloor - floor.getSourceFloor())){
+            if(Math.abs(check - floor.getSourceFloor()) < Math.abs(previousFloor - floor.getSourceFloor())){
                 previousFloor = check;
                 closestID = entry.getKey();
             }
