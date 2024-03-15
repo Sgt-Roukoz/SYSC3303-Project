@@ -33,7 +33,7 @@ public class Scheduler implements Runnable {
     private SchedulerStore store;
     int selectedElevator;
 
-    HashMap<Integer, Queue> destinations;
+    private HashMap<Integer, Queue> destinations;
 
     /**
      * Scheduler class constructor
@@ -119,6 +119,21 @@ public class Scheduler implements Runnable {
     }
 
     /**
+     * Send the destination to the elevator after sending it the source floor
+     * */
+    private String destFloor(){
+        String desti = "03";
+        if(floorRequestToBeProcessed.getDestFloor() > (int) store.getElevators().get(selectedElevator).get(2)){
+            desti.concat("UP,");
+        }else{
+            desti.concat("DOWN,");
+        }
+        desti.concat(String.valueOf(floorRequestToBeProcessed.getDestFloor()));
+        return desti;
+    }
+
+
+    /**
      * Send the processed ElevatorEvent to the elevator queue in eventQueue
      */
     private void sendElevatorRequest(String happening) {
@@ -151,10 +166,39 @@ public class Scheduler implements Runnable {
         }
 
         int msgLen = receivePacket.getLength();
-        System.out.println("Scheduler: ACK received:");
+        System.out.println("Scheduler: Source ACK received:");
         HelperFunctions.printDataInfo(acknowledged, msgLen);
 
         destinations.get(selectedElevator).add(processedRequest.getDestFloor());
+
+        try {
+            byte[] toSend = HelperFunctions.generateMsg(destFloor());
+            DatagramPacket destPacket;
+            int ipAddress = (int) store.getElevators().get(selectedElevator).get(0);
+            byte[] bytes = BigInteger.valueOf(ipAddress).toByteArray();
+            InetAddress address = InetAddress.getByAddress(bytes);
+            destPacket = new DatagramPacket(toSend, toSend.length,
+                    address, (int) store.getElevators().get(selectedElevator).get(1));
+            sendReceiveSocket.send(destPacket);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        acknowledged = new byte[100];
+        receivePacket = new DatagramPacket(acknowledged, acknowledged.length);
+
+        try {
+            // Block until Elevator acknowledges the destination packet
+            sendReceiveSocket.receive(receivePacket);
+        } catch(IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        msgLen = receivePacket.getLength();
+        System.out.println("Scheduler: Destination ACK received:");
+        HelperFunctions.printDataInfo(acknowledged, msgLen);
 
         // eventQueue.processedEvents++;
     }
