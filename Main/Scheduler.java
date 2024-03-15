@@ -6,6 +6,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Queue;
@@ -33,7 +34,7 @@ public class Scheduler implements Runnable {
     private SchedulerStore store;
     int selectedElevator;
 
-    private HashMap<Integer, Queue> destinations;
+    private HashMap<Integer, ArrayList> destinations;
 
     /**
      * Scheduler class constructor
@@ -45,7 +46,7 @@ public class Scheduler implements Runnable {
         this.state = SchedulerState.IDLE; // starting state
         this.store = store;
         for(int i = 0; i < store.getElevators().size(); i++){
-            destinations.put(i, new LinkedList<Integer>());
+            destinations.put(i, new ArrayList());
         }
         try {
             sendReceiveSocket = new DatagramSocket(100);
@@ -171,6 +172,12 @@ public class Scheduler implements Runnable {
 
         destinations.get(selectedElevator).add(processedRequest.getDestFloor());
 
+        /*if(store.getElevators().get(selectedElevator).getStatus() != IDLE){ Meaning it's yet to arrive at the source floor
+            wait();
+        }
+        *
+        * */
+
         try {
             byte[] toSend = HelperFunctions.generateMsg(destFloor());
             DatagramPacket destPacket;
@@ -199,6 +206,21 @@ public class Scheduler implements Runnable {
         msgLen = receivePacket.getLength();
         System.out.println("Scheduler: Destination ACK received:");
         HelperFunctions.printDataInfo(acknowledged, msgLen);
+
+        /*if(store.getElevators().get(selectedElevator).getStatus() != IDLE){ Meaning it's yet to arrive at the dest floor
+            wait();
+        }else{
+            for(int i = 0; i < destinations.get(selectedElevator).size(); i++){ //Get the first dest floor that matches, as
+                                                                             //the floors are added in order
+                if(destinations.get(selectedElevator).get(i) == processedRequest.getDestFloor()){
+                    destinations.get(selectedElevator).remove(i);
+                    break;
+                }
+
+            }
+        }
+        *
+        * */
 
         // eventQueue.processedEvents++;
     }
