@@ -127,6 +127,11 @@ class Moving implements ElevatorState {
     @Override
     public void floorRequest(Elevator context) {
         System.out.println("Elevator is moving.");
+        try {
+            context.moveToFloor(context.getDestinationFloor());
+        } catch (InterruptedException | IOException e) {
+            e.printStackTrace();
+        }        
     }
 
     @Override
@@ -259,6 +264,8 @@ public class Elevator implements Runnable {
     public void destinationRequest(){currentState.destinationRequest(this);currentState.displayState();}
     public void arrivedAtDestination(){currentState.arrivedAtDestination(this);currentState.displayState();}
     public void doorsClosed(){currentState.doorsClosed(this);currentState.displayState();}
+    public int getCurrentFloor(){return currentFloor;}
+    public int getDestinationFloor(){return destinationFloor;}
     /**
     * Method to call the floorRequest event handling method (for transitioning from Idle to MovingToFloor)
     * @param nextState The string representation of what the state to come after the current one is
@@ -284,6 +291,7 @@ public class Elevator implements Runnable {
             if (translatedMessage.startsWith("03")) {
                 direction = translatedMessage.substring(2,3);
                 currentFloor = Integer.parseInt(translatedMessage.substring(5,6));
+                
             } 
         } catch (IOException e) {
             e.printStackTrace();
@@ -317,6 +325,7 @@ public class Elevator implements Runnable {
                         //     System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
                         // }
                         acknowledged = true;
+                        System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
                     }
                 } catch (SocketTimeoutException e) {
                     System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");
@@ -384,7 +393,11 @@ public class Elevator implements Runnable {
             try {
                 byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                sendReceiveSocket.receive(receivePacket);     
+                sendReceiveSocket.receive(receivePacket);  
+                
+                //send acknowledgement to the scheduler
+                packetSender("04Moving," + direction + "," + currentFloor + "," + destinationFloor + "0");
+                
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
                 // System.out.println(translatedMessage);
                 if (translatedMessage.startsWith("03")) {
