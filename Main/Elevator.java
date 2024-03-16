@@ -72,7 +72,6 @@ interface ElevatorState{
 class Idle implements ElevatorState{
     @Override
     public void entry(Elevator context) {
-        // string message = "04Idle," + currentFloor + "0";
         System.out.println("Elevator doors are closed.");
         System.out.println("Elevator is Idle");
         context.sendIdleStatusUpdate();
@@ -349,8 +348,10 @@ public class Elevator implements Runnable {
             }
             if (!acknowledged) {System.out.println("Failed to receive acknowledgement from scheduler after " + MAX_ATTEMPTS + " attempts.");}
         } catch (IOException e) {e.printStackTrace();}
+        
         try{sendReceiveSocket.setSoTimeout(0);} catch (Exception e) {e.printStackTrace();}
         currentState = states.get("Idle");
+        setCurrentState("Idle");
 
     }
  
