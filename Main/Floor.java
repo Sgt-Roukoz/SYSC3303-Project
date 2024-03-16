@@ -12,22 +12,21 @@ import java.util.Scanner;
  * Simulates all floors of the building, including lamps and buttons
  *
  * @author Eric Wang
- * @version 2024-03-05
+ * @author Marwan Zeid
+ * @version 2024-03-15
  */
-public class Floor extends Thread{
-    private final EventQueue eventQueue;
+public class Floor implements Runnable{
     private final int MAX_FLOORS = 22;
     private final Random rand;
-    private final DatagramSocket socket;
-    private DatagramPacket packet;
+    private final DatagramSocket sendReceiveSocket;
+    private DatagramPacket sendPacket;
 
-    public Floor(String name, EventQueue eventQueue) {
-        super(name);
-        this.eventQueue = eventQueue;
+    public Floor() {
         this.rand = new Random();
-        this.packet = new DatagramPacket(new byte[100], 100);
+        this.sendPacket = new DatagramPacket(new byte[100], 100);
         try {
-            this.socket = new DatagramSocket();
+            this.sendReceiveSocket = new DatagramSocket();
+            sendReceiveSocket.setSoTimeout(2000);
         } catch (SocketException e) {
             throw new RuntimeException(e);
         }
@@ -46,9 +45,7 @@ public class Floor extends Thread{
                 Thread.sleep(rand.nextInt(500,2000));
             }
             scanner.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+        } catch (FileNotFoundException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -72,18 +69,55 @@ public class Floor extends Thread{
         msg += split[3];
         msg += "0";
         byte[] byteMsg = HelperFunctions.generateMsg(msg);
+
+        DatagramPacket receivePacket;
         try {
-            packet = new DatagramPacket(byteMsg, 0, byteMsg.length, InetAddress.getLocalHost(), 5000);
-            HelperFunctions.printDataInfo(packet.getData(), packet.getLength());
-            socket.send(packet);
+            sendPacket = new DatagramPacket(byteMsg, 0, byteMsg.length, InetAddress.getLocalHost(), 5000);
+            HelperFunctions.printDataInfo(sendPacket.getData(), sendPacket.getLength());
+
+            // Initialize receivePacket before using it
+            byte[] receiveData = new byte[100];
+            receivePacket = new DatagramPacket(receiveData, receiveData.length);
         } catch (UnknownHostException e) {
             throw new RuntimeException(e);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
-        /*ElevatorEvent event = new ElevatorEvent(split[0], Integer.valueOf(split[1]), ELEVATOR_BUTTON.valueOf(split[2].toUpperCase()), Integer.valueOf(split[3]));
-        System.out.println("Floor sending event: " + event );
-        eventQueue.setFloorRequest(event);*/
+
+        // Perform sending and receiving with timeout handling
+        int attempt = 0;
+        boolean receivedResponse = false;
+
+        while (attempt < 3 && !receivedResponse) { // Retry up to 3 times
+            System.out.println(Thread.currentThread().getName() + ": Attempt " + (attempt + 1));
+            try {
+                // Attempt to receive the acknowledgment
+                sendReceiveSocket.receive(receivePacket);
+                // Handle the acknowledgment
+                receivedResponse = handleAcknowledgment(receivePacket, msg);
+            } catch (SocketTimeoutException ste) {
+                // Handle timeout exception
+                System.out.println(Thread.currentThread().getName() + ": Timeout. Resending packet.");
+                attempt++;
+            } catch (IOException e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+
+        if (!receivedResponse) {
+            System.out.println(Thread.currentThread().getName() + ": No response after multiple attempts. Exiting.");
+            System.exit(1);
+        }
+    }
+
+    /**
+     * Handles an acknowledgment packet received from the server.
+     *
+     * @param acknowledgmentPacket The DatagramPacket containing the acknowledgment received from the server.
+     */
+    private boolean handleAcknowledgment(DatagramPacket acknowledgmentPacket, String msg) {
+        // Handle the acknowledgment packet received from the server
+        String acknowledgementString = HelperFunctions.translateMsg(acknowledgmentPacket.getData(), acknowledgmentPacket.getLength());
+        return acknowledgementString.equals("ACK" + msg);
     }
 
     /**
@@ -94,5 +128,12 @@ public class Floor extends Thread{
         System.out.println("Started Floor");
         processFile(new File("test.txt"));
         System.out.println("Floor done");
+    }
+
+    public static void main(String[] args)
+    {
+        Floor floor = new Floor();
+        Thread floorThread = new Thread(floor);
+        floorThread.start();
     }
 }

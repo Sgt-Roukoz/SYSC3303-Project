@@ -9,7 +9,7 @@ public class Main {
         EventQueue eventQueue = new EventQueue();
         Scheduler scheduler = new Scheduler(eventQueue);
         Elevator elevator = new Elevator(eventQueue, 1);
-        Floor floor = new Floor("Floor 1", eventQueue);
+        Floor floor = new Floor();
 
         Thread floorThread = new Thread(floor);
         Thread schedulerThread = new Thread(scheduler);
