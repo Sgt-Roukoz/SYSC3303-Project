@@ -9,7 +9,6 @@
  * @author Garrison Su
  * @version 2024-03-14
  */
-
 import java.util.HashMap;
 import java.util.Map;
 import java.io.IOException;
@@ -73,10 +72,10 @@ interface ElevatorState{
 class Idle implements ElevatorState{
     @Override
     public void entry(Elevator context) {
+        // string message = "04Idle," + currentFloor + "0";
         System.out.println("Elevator doors are closed.");
         System.out.println("Elevator is Idle");
         context.sendIdleStatusUpdate();
-        
     }
 
     @Override
@@ -311,14 +310,13 @@ public class Elevator implements Runnable {
         }
     }
 
-    protected void sendIdleStatusUpdate(){
+    protected void packetSender(String message){
         byte[] receiveData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
         try {
             int attempts = 0;
             while (!acknowledged && attempts < MAX_ATTEMPTS) {
                 try {
-                    String message = "04Idle" + currentFloor + "0"; 
                     byte[] sendData = HelperFunctions.generateMsg(message);
                     DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getLocalHost(), serverPort); // 5000
                     sendReceiveSocket.send(sendPacket);
@@ -330,8 +328,17 @@ public class Elevator implements Runnable {
                     sendReceiveSocket.receive(receivePacket);
                     String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
                     if (translatedMessage.startsWith("ACK")) {
+                        if (message.startsWith("04Moving")) {
+                            direction = translatedMessage.substring(12,13);
+                            currentFloor = Integer.parseInt(translatedMessage.substring(15, 15));
+                            destinationFloor = Integer.parseInt(translatedMessage.substring(17, 17));
+
+                        } else if (message.startsWith("04Idle")) {
+                            currentFloor = Integer.parseInt(translatedMessage.substring(10,10));
+                        } else{
+                            System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
+                        }
                         acknowledged = true;
-                        direction = translatedMessage.substring(3, 4);
                     }
                 } catch (SocketTimeoutException e) {
                     System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");
@@ -341,56 +348,96 @@ public class Elevator implements Runnable {
             e.printStackTrace();
         }
     }
-    protected void sendMovingStatusUpdate() {
-        byte[] receiveData = new byte[1024];
-        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-         
-        System.out.println("Moving to some floor");       
-        try {
-            int attempts = 0;
-            while (!acknowledged && attempts < MAX_ATTEMPTS) {
-                 
-                try {
-                    String message = "04Moving" +currentFloor +  "0"; 
-                    byte[] sendData = HelperFunctions.generateMsg(message);
-                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getLocalHost(), serverPort); // 5000
-                    sendReceiveSocket.send(sendPacket);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
 
-                attempts++;
-                try {
-                    //  byte[] receiveData = new byte[1024];
-                    //  DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                    sendReceiveSocket.receive(receivePacket);
-                    
-                    String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
- 
-                    if (translatedMessage.startsWith("ACK")) {
-                        acknowledged = true;
-                        direction = translatedMessage.substring(2, 3);
-                        destinationFloor = Integer.parseInt(translatedMessage.substring(5,5));
-                        System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
-                        
-                    }
-                } catch (SocketTimeoutException e) {
-                    System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");
-                }
-             }
-            if (!acknowledged) {
-                //  throw new IOException("Failed to receive acknowledgement from scheduler after " + MAX_ATTEMPTS + " attempts.");
-                System.out.println("Failed to receive acknowledgement from scheduler after " + MAX_ATTEMPTS + " attempts.");
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
+    protected void sendIdleStatusUpdate(){
+        String message2 = "04Idle," + currentFloor + "0";
         try{
-            sendReceiveSocket.setSoTimeout(0); // Idle state
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+            // sendReceiveSocket.setSoTimeout(0); 
+            packetSender(message2);
+        } catch (Exception e) {e.printStackTrace();}
+
+        packetSender(message2);
+
+        // byte[] receiveData = new byte[1024];
+        // DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        // try {
+        //     int attempts = 0;
+        //     while (!acknowledged && attempts < MAX_ATTEMPTS) {
+        //         try {
+        //             String message = "04Idle," + currentFloor + "0"; 
+        //             byte[] sendData = HelperFunctions.generateMsg(message);
+        //             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getLocalHost(), serverPort); // 5000
+        //             sendReceiveSocket.send(sendPacket);
+        //         } catch (IOException e) {
+        //             e.printStackTrace();
+        //         }
+        //         attempts++;
+        //         try {
+        //             sendReceiveSocket.receive(receivePacket);
+        //             String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
+        //             if (translatedMessage.startsWith("ACK")) {
+        //                 acknowledged = true;
+        //                 direction = translatedMessage.substring(3, 4);
+        //             }
+        //         } catch (SocketTimeoutException e) {
+        //             System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");
+        //         }
+        //     }
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
+    }
+    protected void sendMovingStatusUpdate() {
+        String message2 = "04Moving," + direction + "," + currentFloor + "," + destinationFloor + "0"; 
+        packetSender(message2);
+        // byte[] receiveData = new byte[1024];
+        // DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+         
+        // System.out.println("Moving to some floor");       
+        // try {
+        //     int attempts = 0;
+        //     while (!acknowledged && attempts < MAX_ATTEMPTS) {
+                 
+        //         try {
+        //             String message = "04Moving," + direction + "," + currentFloor + "," + destinationFloor + "0"; 
+        //             byte[] sendData = HelperFunctions.generateMsg(message);
+        //             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getLocalHost(), serverPort); // 5000
+        //             sendReceiveSocket.send(sendPacket);
+        //         } catch (IOException e) {
+        //             e.printStackTrace();
+        //         }
+
+        //         attempts++;
+        //         try {
+        //             //  byte[] receiveData = new byte[1024];
+        //             //  DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        //             sendReceiveSocket.receive(receivePacket);
+                    
+        //             String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
+ 
+        //             if (translatedMessage.startsWith("ACK")) {
+        //                 acknowledged = true;
+        //                 direction = translatedMessage.substring(2, 3);
+        //                 destinationFloor = Integer.parseInt(translatedMessage.substring(5,5));
+        //                 System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
+                        
+        //             }
+        //         } catch (SocketTimeoutException e) {
+        //             System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");
+        //         }
+        //      }
+        //     if (!acknowledged) {
+        //         System.out.println("Failed to receive acknowledgement from scheduler after " + MAX_ATTEMPTS + " attempts.");
+        //     }
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
+
+        // try{
+        //     sendReceiveSocket.setSoTimeout(0); // Idle state
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
 
     }
      /**
