@@ -75,6 +75,7 @@ class Idle implements ElevatorState{
         System.out.println("Elevator doors are closed.");
         System.out.println("Elevator is Idle");
         context.sendIdleStatusUpdate();
+        context.waitMessageScheduler(); 
     }
 
     @Override
@@ -120,6 +121,7 @@ class Moving implements ElevatorState {
     public void entry(Elevator context) {
         System.out.println("Elevator is moving.");
         context.sendMovingStatusUpdate();
+        context.waitMessageScheduler(); 
     }
 
     @Override
@@ -262,7 +264,7 @@ public class Elevator implements Runnable {
     * @param nextState The string representation of what the state to come after the current one is
     */
     public void setCurrentState(String nextState){this.currentState = states.get(nextState);currentState.entry(this);}
- 
+    
     private void sendIExistMessage() {
         try {
             String message = "02" + elevatorId + "0"; 
@@ -273,7 +275,20 @@ public class Elevator implements Runnable {
             e.printStackTrace();
         }
     }
-
+    protected void waitMessageScheduler(){
+        byte[] receiveData = new byte[1024];
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        try {
+            sendReceiveSocket.receive(receivePacket);
+            String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
+            if (translatedMessage.startsWith("03")) {
+                direction = translatedMessage.substring(2,3);
+                currentFloor = Integer.parseInt(translatedMessage.substring(5,6));
+            } 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
     protected void packetSender(String message){
         byte[] receiveData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -292,15 +307,15 @@ public class Elevator implements Runnable {
                     sendReceiveSocket.receive(receivePacket);
                     String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
                     if (translatedMessage.startsWith("ACK")) {
-                        if (message.startsWith("04Moving")) {
-                            direction = translatedMessage.substring(12,13);
-                            currentFloor = Integer.parseInt(translatedMessage.substring(15, 15));
-                            destinationFloor = Integer.parseInt(translatedMessage.substring(17, 17));
-                        } else if (message.startsWith("04Idle")) {
-                            currentFloor = Integer.parseInt(translatedMessage.substring(10,10));
-                        } else{
-                            System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
-                        }
+                        // if (message.startsWith("04Moving")) {
+                        //     direction = translatedMessage.substring(12,13);
+                        //     currentFloor = Integer.parseInt(translatedMessage.substring(15, 15));
+                        //     destinationFloor = Integer.parseInt(translatedMessage.substring(17, 17));
+                        // } else if (message.startsWith("04Idle")) {
+                        //     currentFloor = Integer.parseInt(translatedMessage.substring(10,10));
+                        // } else{
+                        //     System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
+                        // }
                         acknowledged = true;
                     }
                 } catch (SocketTimeoutException e) {
@@ -312,14 +327,13 @@ public class Elevator implements Runnable {
         }
     }
 
+
     protected void sendIdleStatusUpdate(){
-        String message2 = "04Idle," + currentFloor + "0";     
-        packetSender(message2);
+        packetSender("04Idle," + currentFloor + "0"); // 04 stuff
     }
 
     protected void sendMovingStatusUpdate() {
-        String message2 = "04Moving," + direction + "," + currentFloor + "," + destinationFloor + "0"; 
-        packetSender(message2);
+        packetSender("04Moving," + direction + "," + currentFloor + "," + destinationFloor + "0");
     }
 
      /**
@@ -360,6 +374,7 @@ public class Elevator implements Runnable {
       * The movement is simulated by pausing the thread for a calculated duration.
       * @param floor The target floor to which the elevator should move.
       * @throws InterruptedException if the thread is interrupted while sleeping.
+      * @throws IOException if an I/O error occurs while sending or receiving a packet.
       */
     protected void moveToFloor(int floor) throws InterruptedException, IOException {
         int floorDifference = Math.abs(floor - currentFloor);
@@ -369,12 +384,12 @@ public class Elevator implements Runnable {
             try {
                 byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                // receivePacket.setData(receiveData);
-                sendReceiveSocket.receive(receivePacket); 
-    
+                sendReceiveSocket.receive(receivePacket);     
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
-                System.out.println(translatedMessage);
-    
+                // System.out.println(translatedMessage);
+                if (translatedMessage.startsWith("03")) {
+                    currentFloor = Integer.parseInt(translatedMessage.substring(5,6));
+                }
             } catch (SocketTimeoutException e) {
                 if (floor > currentFloor) {
                     currentFloor++;
@@ -384,7 +399,6 @@ public class Elevator implements Runnable {
                 System.out.println("Elevator " + elevatorId + " is now at floor " + currentFloor);
             }
         }
-    
         this.currentFloor = floor;
         System.out.println("Elevator " + elevatorId + " arrived at floor " + currentFloor);
     }
