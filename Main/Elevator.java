@@ -249,32 +249,6 @@ public class Elevator implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-
-        byte[] receiveData = new byte[1024];
-        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-        
-        System.out.println("Sending IEXIST message to the scheduler.");       
-        try {
-            int attempts = 0;
-            while (!acknowledged && attempts < MAX_ATTEMPTS) {
-                sendIExistMessage();      
-                attempts++;
-                try {
-                    sendReceiveSocket.receive(receivePacket);
-                    String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
-                    if (translatedMessage.startsWith("ACK")) {
-                        // direction = translatedMessage.substring(3, 4);
-                        // destinationFloor = Integer.parseInt(translatedMessage.substring(4, 5));
-                        acknowledged = true;
-                        System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
-                    }
-                } catch (SocketTimeoutException e) {System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");}
-            }
-            if (!acknowledged) {System.out.println("Failed to receive acknowledgement from scheduler after " + MAX_ATTEMPTS + " attempts.");}
-        } catch (IOException e) {e.printStackTrace();}
-
-        try{sendReceiveSocket.setSoTimeout(0);} catch (Exception e) {e.printStackTrace();}
-        currentState = states.get("Idle");
         //  sendReceiveSocket.close();
     }
  
@@ -286,7 +260,6 @@ public class Elevator implements Runnable {
     public void doorsClosed(){currentState.doorsClosed(this);currentState.displayState();}
     /**
     * Method to call the floorRequest event handling method (for transitioning from Idle to MovingToFloor)
-    *
     * @param nextState The string representation of what the state to come after the current one is
     */
     public void setCurrentState(String nextState){this.currentState = states.get(nextState);currentState.entry(this);}
@@ -324,7 +297,6 @@ public class Elevator implements Runnable {
                             direction = translatedMessage.substring(12,13);
                             currentFloor = Integer.parseInt(translatedMessage.substring(15, 15));
                             destinationFloor = Integer.parseInt(translatedMessage.substring(17, 17));
-
                         } else if (message.startsWith("04Idle")) {
                             currentFloor = Integer.parseInt(translatedMessage.substring(10,10));
                         } else{
@@ -357,24 +329,29 @@ public class Elevator implements Runnable {
       */
      @Override
      public void run() {
-        // while (eventQueue.processedEvents < eventQueue.maxEvents) {
-        //     try {
-        //         ElevatorEvent event = eventQueue.getElevatorRequest();
-        //         if (event != null) {
-        //             System.out.println("Elevator " + elevatorId + " received event: " + event);
-        //         //  currentEvent = event;
-        //             floorRequested();
-        //         }
-        //         switch(currentState.toString()){
-        //             case "Idle", "Moving", "LoadingUnloading":
-        //                 currentState.displayState();
-        //                 break;
-        //         }
-        //     } catch (Exception e) {
-        //         System.out.println("Elevator " + elevatorId + " interrupted.");
-        //         Thread.currentThread().interrupt();
-        //     }
-        // }
+        byte[] receiveData = new byte[1024];
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        
+        System.out.println("Sending IEXIST message to the scheduler.");       
+        try {
+            int attempts = 0;
+            while (!acknowledged && attempts < MAX_ATTEMPTS) {
+                sendIExistMessage();      
+                attempts++;
+                try {
+                    sendReceiveSocket.receive(receivePacket);
+                    String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
+                    if (translatedMessage.startsWith("ACK")) {
+                        acknowledged = true;
+                        System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
+                    }
+                } catch (SocketTimeoutException e) {System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");}
+            }
+            if (!acknowledged) {System.out.println("Failed to receive acknowledgement from scheduler after " + MAX_ATTEMPTS + " attempts.");}
+        } catch (IOException e) {e.printStackTrace();}
+        try{sendReceiveSocket.setSoTimeout(0);} catch (Exception e) {e.printStackTrace();}
+        currentState = states.get("Idle");
+
     }
  
      /**
