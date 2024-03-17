@@ -1,0 +1,64 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+
+autonumber
+
+
+activate Floor
+activate Scheduler
+activate SchedulerReceiver
+activate Elevator
+
+Elevator -> SchedulerReceiver: send(02elevid0)
+SchedulerReceiver -> Elevator: reply(:ack)
+deactivate Elevator
+SchedulerReceiver -> SchedulerStore: addElevator(:elevId, :address, :port)
+activate SchedulerStore
+deactivate SchedulerStore
+Floor -> SchedulerReceiver: send(:floorRequest)
+SchedulerReceiver -> Floor: reply(:ack)
+SchedulerReceiver -> SchedulerStore: setFloorRequest(event: ElevatorEvent)
+activate SchedulerStore
+deactivate SchedulerStore
+
+loop while eventsArriving && Elevators Active
+    Scheduler->SchedulerStore: getElevators()
+    activate SchedulerStore
+    SchedulerStore->Scheduler: return elevators
+    deactivate SchedulerStore
+    Scheduler->Elevator: send(moveCommand)
+    activate Elevator
+    Elevator->Scheduler: reply(:ack)
+    Elevator->Elevator: setCurrentState("Moving")
+    Elevator->SchedulerReceiver: send(statusUpdate)
+    SchedulerReceiver->Elevator: reply(:ack)
+    SchedulerReceiver->SchedulerStore: updateElevator(:data)
+    activate SchedulerStore
+    deactivate SchedulerStore
+    Elevator->Elevator: moveToFloor(destFloor)
+
+    loop while currentFloor != destFloor
+        Elevator->SchedulerReceiver: statusUpdate("moving,currentFloor,destFloor")
+        SchedulerReceiver->Elevator: reply(:ack)
+        SchedulerReceiver->SchedulerStore: updateElevator(:data)
+            activate SchedulerStore
+            deactivate SchedulerStore
+
+        alt new moveCommand
+            Scheduler->Elevator: send(moveCommand)
+            Elevator->Scheduler: reply(:ack)
+            Elevator->Elevator: updateDestinationFloor()
+        end
+
+    end
+    Elevator->Elevator: setCurrentState("Load")
+    Elevator->Elevator: setCurrentState("Idle")
+    Elevator->SchedulerReceiver: statusUpdate("Idle,currentFloor")
+    SchedulerReceiver->Elevator: reply(:ack)
+        SchedulerReceiver->SchedulerStore: updateElevator(:data)
+        activate SchedulerStore
+        deactivate SchedulerStore
+end
+
+
+@enduml

@@ -1,21 +1,22 @@
 package Main;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 
 public class SchedulerReceiver implements Runnable {
-    private SchedulerStore store;
+    private SchedulerStoreInt store;
     private final int port = 5000;
 
-    public SchedulerReceiver(SchedulerStore store) {
+    public SchedulerReceiver(SchedulerStoreInt store) {
         this.store = store;
     }
 
     @Override
     public void run() {
-        try (DatagramSocket serverSocket = new DatagramSocket(port)) {
+        try (DatagramSocket serverSocket = new DatagramSocket(port)){
             byte[] receiveData = new byte[1024];
 
             System.out.println("Scheduler Receiver running on port " + port);
@@ -31,7 +32,7 @@ public class SchedulerReceiver implements Runnable {
 
                 // Handle message based on type
                 if (translatedMessage.startsWith("01")) { // FloorEvent message
-                    // Extract message details, assuming a format like "01,srcFloor,Direction,destFloor".
+                    // Extract message details, assuming a format like "01srcFloor,Direction,destFloor".
                     String[] messageParts = translatedMessage.substring(2, translatedMessage.length() - 1).split(",");
                     if(messageParts.length >= 3) {
                         int sourceFloor = Integer.parseInt(messageParts[0].trim());
@@ -87,8 +88,25 @@ public class SchedulerReceiver implements Runnable {
                 // Clear the buffer after handling the message
                 receiveData = new byte[1024];
             }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ignored) {
+        }
+    }
+
+    public static void main(String[] args)
+    {
+        try {
+            SchedulerStoreInt store = new SchedulerStore();
+            // Create and export the RMI registry
+            LocateRegistry.createRegistry(1099);
+
+            // Bind the remote object's stub in the registry
+            Naming.rebind("store", store);
+
+            SchedulerReceiver receiver = new SchedulerReceiver(store);
+            Thread receiverThread = new Thread(receiver);
+            receiverThread.start();
+        } catch (RemoteException | MalformedURLException e) {
+            throw new RuntimeException(e);
         }
     }
 }

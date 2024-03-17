@@ -1,0 +1,30 @@
+@startuml
+'https://plantuml.com/state-diagram
+
+scale 350 width
+[*] --> operational
+
+state operational {
+    operational: entry/sendIExist
+    state Idle{
+        Idle: entry/sendIdleStatusUpdate
+    }
+    state Moving{
+    Moving: entry/sendMovingStatusUpdate
+    Moving: do/moveToFloor,sendMovingStatusUpdate
+    }
+    state LoadingUnloading{
+        LoadingUnloading: entry/openCloseDoors
+
+    }
+
+    state c <<choice>>
+}
+
+Idle --> c: floorRequest
+c --> LoadingUnloading: [destinationFloor == currentFloor]
+c --> Moving: Else
+Moving --> Moving: floorRequest
+Moving --> LoadingUnloading: arrivedAtFloor
+LoadingUnloading --> Idle: doorsClosed
+@enduml

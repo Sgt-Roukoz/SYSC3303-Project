@@ -3,15 +3,21 @@
  */
 
 package Testing;
-import Main.Elevator;
-import Main.EventQueue;
+import Main.*;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.rmi.ConnectException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+
 class ElevatorTest {
 
-    EventQueue eventQueue;
     Elevator testingElevator;
 
     ElevatorTest() {
@@ -23,8 +29,7 @@ class ElevatorTest {
     @BeforeEach
     void setUp()
     {
-        eventQueue = new EventQueue();
-        testingElevator = new Elevator(eventQueue, 1);
+        testingElevator = new Elevator(1);
     }
 
     /**
@@ -46,38 +51,41 @@ class ElevatorTest {
     }
 
     /**
-     * Testing elevator notifying scheduler of arrival
-     */
-    @Test
-    void TestNotifySchedulerOfArrival() {
-        testingElevator.setNotifySchedulerOfArrival();
-        Assertions.assertEquals(1, eventQueue.processedEvents);
-    }
-
-    /**
      * Testing Elevator State Machine transitions
      */
     @Test
-    void testStateChanges()
-    {
-        System.out.println("Test Idle State");
+    void testStateChanges() throws IOException, InterruptedException {
+        SchedulerStoreInt store;
+        try {
+            store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
+        } catch (NotBoundException | ConnectException e) {
+            store = new SchedulerStore();
+        }
+
+        Thread receiver = new Thread(new SchedulerReceiver(store));
+        receiver.start();
+        Thread elevThread = new Thread(testingElevator);
+        elevThread.start();
+
+        Thread.sleep(25);
         Assertions.assertEquals("Idle", testingElevator.getCurrentState());
 
-        testingElevator.floorRequested();
-        System.out.println("Test MovingToFloor State");
-        Assertions.assertEquals("MovingToFloor", testingElevator.getCurrentState());
+        byte[] testMessage = "03UP,020".getBytes();
+        InetAddress address = (InetAddress) store.getElevators().get(1).getFirst();
+        int port = (int) store.getElevators().get(1).get(1);
+        DatagramPacket testPacket = new DatagramPacket(testMessage, testMessage.length, address, port);
+        DatagramSocket socket = new DatagramSocket();
+        socket.send(testPacket);
 
-        testingElevator.arrivedAtFloor();
+        Thread.sleep(25);
+        System.out.println("Test Moving State");
+        Assertions.assertEquals("Moving", testingElevator.getCurrentState());
+
+        Thread.sleep(3050); // wait for elevator to move to floor
         System.out.println("Test Loading State");
-        Assertions.assertEquals("Loading", testingElevator.getCurrentState());
+        Assertions.assertEquals("LoadingUnloading", testingElevator.getCurrentState());
+        elevThread.interrupt();
 
-        testingElevator.destinationRequest();
-        System.out.println("Test MovingToDestination State");
-        Assertions.assertEquals("MovingToDestination", testingElevator.getCurrentState());
-
-        testingElevator.arrivedAtDestination();
-        System.out.println("Test Unloading State");
-        Assertions.assertEquals("Unloading", testingElevator.getCurrentState());
     }
 
 }
