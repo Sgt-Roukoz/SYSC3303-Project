@@ -39,17 +39,6 @@ interface ElevatorState{
     */
     void arrivedAtFloor(Elevator context);
 
-    /**
-     * Handles the event when a destination is requested
-    * @param context The context of the elevator state machine
-    */
-    void destinationRequest(Elevator context);
-
-    /**
-     * Handles the event when elevator arrives at destination floor
-    * @param context The context of the elevator state machine
-    */
-    void arrivedAtDestination(Elevator context);
 
     /**
      * Handles the event when elevator doors are requested to be closed
@@ -72,29 +61,23 @@ interface ElevatorState{
 class Idle implements ElevatorState{
     @Override
     public void entry(Elevator context) {
-        System.out.println("Elevator doors are closed.");
-        System.out.println("Elevator is Idle");
         context.sendIdleStatusUpdate();
+        System.out.println("Elevator " + context.getElevatorId() + " is Idle");
         context.waitMessageScheduler(); 
     }
 
     @Override
     public void floorRequest(Elevator context) {
-        context.setCurrentState("Moving");
+        System.out.println("Floor Requested...Elevator is moving.");
+        if (context.getCurrentFloor() == context.getDestinationFloor()) {
+            context.setCurrentState("LoadingUnloading");
+        } else {
+            context.setCurrentState("Moving");
+        }
     }
 
     @Override
     public void arrivedAtFloor(Elevator context){
-        System.out.println("Elevator is still idling.");
-    }
-
-    @Override
-    public void destinationRequest(Elevator context){
-        System.out.println("Elevator is still idling.");
-    }
-
-    @Override
-    public void arrivedAtDestination(Elevator context){
         System.out.println("Elevator is still idling.");
     }
 
@@ -121,17 +104,17 @@ class Moving implements ElevatorState {
     public void entry(Elevator context) {
         System.out.println("Elevator is moving.");
         context.sendMovingStatusUpdate();
-        context.waitMessageScheduler(); 
-    }
 
-    @Override
-    public void floorRequest(Elevator context) {
-        System.out.println("Elevator is moving.");
         try {
             context.moveToFloor(context.getDestinationFloor());
         } catch (InterruptedException | IOException e) {
             e.printStackTrace();
-        }        
+        } 
+    }
+
+    @Override
+    public void floorRequest(Elevator context) {
+        System.out.println("Elevator is moving.");      
     }
 
     @Override
@@ -140,18 +123,8 @@ class Moving implements ElevatorState {
     }
 
     @Override
-    public void destinationRequest(Elevator context) {
-        System.out.println("Elevator is moving.");
-    }
-
-    @Override
-    public void arrivedAtDestination(Elevator context) {
-        context.setCurrentState("LoadingUnloading");
-    }
-
-    @Override
     public void doorsClosed(Elevator context) {
-        System.out.println("Elevator is moving.");
+        System.out.println("Door is already closed, elevator is moving");
     }
 
     @Override
@@ -171,13 +144,12 @@ class Moving implements ElevatorState {
 class LoadingUnloading implements ElevatorState {
     @Override
     public void entry(Elevator context) {
-        System.out.println("Elevator is loading/unloading passengers.");
-        context.notifySchedulerOfArrival();
+        doorsClosed(context);
     }
 
     @Override
     public void floorRequest(Elevator context) {
-        System.out.println("Elevator is loading/unloading passengers.");
+        System.out.println("Elevator is loading/unloading.");
     }
 
     @Override
@@ -186,19 +158,9 @@ class LoadingUnloading implements ElevatorState {
     }
 
     @Override
-    public void destinationRequest(Elevator context) {
-        System.out.println("Destination floor requested.");
-        context.setCurrentState("Moving");
-    }
-
-    @Override
-    public void arrivedAtDestination(Elevator context) {
-        System.out.println("Elevator is loading/unloading passengers.");
-    }
-
-    @Override
     public void doorsClosed(Elevator context) {
         try {
+            context.openDoors();
             context.closeDoors();
             context.setCurrentState("Idle");
         } catch (InterruptedException e) {
@@ -219,47 +181,21 @@ class LoadingUnloading implements ElevatorState {
 }
  
 public class Elevator implements Runnable {
-    public static void main(String[] args) {
-        System.out.println("Elevator Main Subsystem starting...");
-
-        SchedulerStore store = new SchedulerStore();
-        SchedulerReceiver schedulerReceiver = new SchedulerReceiver(store); 
-        // Scheduler scheduler = new Scheduler(store);  
-        Elevator elevator1 = new Elevator(1);
-        // Elevator elevator2 = new Elevator(2);
-        // Elevator elevator3 = new Elevator(3);
-        // Elevator elevator4 = new Elevator(4);
-
-        // Thread schedulerThread = new Thread(scheduler);
-        Thread schedulerReceiverThread = new Thread(schedulerReceiver); 
-        Thread elevatorThread1 = new Thread(elevator1);
-        // Thread elevatorThread2 = new Thread(elevator2);
-        // Thread elevatorThread3 = new Thread(elevator3);
-        // Thread elevatorThread4 = new Thread(elevator4);
-        
-        elevatorThread1.start();
-        // elevatorThread2.start();
-        // elevatorThread3.start();
-        // elevatorThread4.start();
-        schedulerReceiverThread.start(); 
-        //schedulerThread.start();
-    }
 
     private static final long TIME_PER_FLOOR = 3000; // Average time per floor in milliseconds (Halved)
     protected static final long DOOR_OPERATION_TIME = 5000; // Average door operation time in milliseconds (Halved)
+    private static final int ACK_LOOP_WAIT_TIME = 3000; // Time to wait for a response from the scheduler
     private int currentFloor;
     private final int elevatorId;
     private boolean doorsOpen;
     private final Map<String, ElevatorState> states;
     private ElevatorState currentState;    
-    
-    //Socket related stuff
     int serverPort = 5000;
     private DatagramSocket sendReceiveSocket;
-    private boolean acknowledged = false; // Flag to check if the scheduler has acknowledged the elevator's existence
-    private final int MAX_ATTEMPTS = 5;
-    private String direction;
-    private int destinationFloor;
+    private boolean acknowledged = false; 
+    private final int MAX_ATTEMPTS = 5; // Maximum number of attempts to send a message to the scheduler
+    private String direction; // UP or DN
+    private int destinationFloor; 
     /**
      * Constructs an Elevator object with a specified Scheduler and elevator ID.
     * The elevator is initialized on the ground floor with doors closed.
@@ -277,18 +213,15 @@ public class Elevator implements Runnable {
          
         try{
             sendReceiveSocket = new DatagramSocket();
-            sendReceiveSocket.setSoTimeout(3000); // acknowdgement timeout
+            sendReceiveSocket.setSoTimeout(ACK_LOOP_WAIT_TIME); // acknowdgement timeout loop time
         } catch (IOException e) {
             e.printStackTrace();
         }
-        //  sendReceiveSocket.close();
     }
  
     public int getElevatorId(){return elevatorId;}
     public void floorRequested() {currentState.floorRequest(this);currentState.displayState();}
     public void arrivedAtFloor(){currentState.arrivedAtFloor(this);currentState.displayState();}
-    public void destinationRequest(){currentState.destinationRequest(this);currentState.displayState();}
-    public void arrivedAtDestination(){currentState.arrivedAtDestination(this);currentState.displayState();}
     public void doorsClosed(){currentState.doorsClosed(this);currentState.displayState();}
     public int getCurrentFloor(){return currentFloor;}
     public int getDestinationFloor(){return destinationFloor;}
@@ -315,15 +248,17 @@ public class Elevator implements Runnable {
             sendReceiveSocket.receive(receivePacket);
             String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
             if (translatedMessage.startsWith("03")) {
-                direction = translatedMessage.substring(2,3);
-                currentFloor = Integer.parseInt(translatedMessage.substring(5,6));
-                
+                direction = translatedMessage.substring(2,4);
+                currentFloor = Integer.parseInt(translatedMessage.substring(5,7));
             } 
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        floorRequested();
+        
     }
-    protected void packetSender(String message){
+    protected void packetSentGetAck(String message){
         boolean ackBool = false;
         byte[] receiveData = new byte[1024];
         DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
@@ -342,16 +277,7 @@ public class Elevator implements Runnable {
                 try {
                     sendReceiveSocket.receive(receivePacket);
                     String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
-                    if (translatedMessage.startsWith("ACK")) {
-                        // if (message.startsWith("04Moving")) {
-                        //     direction = translatedMessage.substring(12,13);
-                        //     currentFloor = Integer.parseInt(translatedMessage.substring(15, 15));
-                        //     destinationFloor = Integer.parseInt(translatedMessage.substring(17, 17));
-                        // } else if (message.startsWith("04Idle")) {
-                        //     currentFloor = Integer.parseInt(translatedMessage.substring(10,10));
-                        // } else{
-                        //     System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
-                        // }
+                    if (translatedMessage.equals("ACK" + message)) {
                         ackBool = true;
                         System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
                     }
@@ -365,15 +291,16 @@ public class Elevator implements Runnable {
         }
     }
 
-
     protected void sendIdleStatusUpdate(){
         String message = "04" + elevatorId + ",Idle," + currentFloor + "0";
-        packetSender(message); // 04 stuff
+        System.out.println("Elevator "+ getElevatorId() + " sending idle status update...");
+        packetSentGetAck(message); // 04 stuff
     }
 
     protected void sendMovingStatusUpdate() {
         String message = "04" + elevatorId + ",Moving," + direction + "," + currentFloor + "," + destinationFloor + "0";
-        packetSender(message);
+        System.out.println("Sending Moving status update...");
+        packetSentGetAck(message);
     }
 
      /**
@@ -404,9 +331,7 @@ public class Elevator implements Runnable {
         } catch (IOException e) {e.printStackTrace();}
         
         try{sendReceiveSocket.setSoTimeout(0);} catch (Exception e) {e.printStackTrace();}
-        currentState = states.get("Idle");
         setCurrentState("Idle");
-
     }
  
      /**
@@ -417,7 +342,7 @@ public class Elevator implements Runnable {
       * @throws IOException if an I/O error occurs while sending or receiving a packet.
       */
     protected void moveToFloor(int floor) throws InterruptedException, IOException {
-        int floorDifference = Math.abs(floor - currentFloor);
+        // int floorDifference = Math.abs(floor - currentFloor);
         long travelTimePerFloor = TIME_PER_FLOOR;
         sendReceiveSocket.setSoTimeout((int) travelTimePerFloor);
         
@@ -428,11 +353,10 @@ public class Elevator implements Runnable {
                 sendReceiveSocket.receive(receivePacket);  
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
                 if (translatedMessage.startsWith("03")) {
-                    destinationFloor = Integer.parseInt(translatedMessage.substring(5,6));
+                    destinationFloor = Integer.parseInt(translatedMessage.substring(5,7));
                     byte[] ack = HelperFunctions.generateMsg("ACK"+ translatedMessage);
                     DatagramPacket tempack = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), receivePacket.getPort());
                     sendReceiveSocket.send(tempack);
-                    return;
                 }
             } catch (SocketTimeoutException e) {
                 if (floor > currentFloor) {
@@ -440,22 +364,16 @@ public class Elevator implements Runnable {
                 } else {
                     currentFloor--;
                 }
-                packetSender("04" + elevatorId + ",Moving," + direction + "," + currentFloor + "," + destinationFloor + "0");
+                packetSentGetAck("04" + elevatorId + ",Moving," + direction + "," + currentFloor + "," + destinationFloor + "0");
                 System.out.println("Elevator " + elevatorId + " is now at floor " + currentFloor);
             }
         }
-        this.currentFloor = floor;
+        currentFloor = floor;
+
+        arrivedAtFloor();
         System.out.println("Elevator " + elevatorId + " arrived at floor " + destinationFloor);
     }
  
-     /**
-      * Notifies the Scheduler of the elevator's arrival at a floor.
-      * This method constructs an arrival event and sends it to the Scheduler.
-      */
-    protected void notifySchedulerOfArrival() {
-        System.out.println("Elevator " + elevatorId + " notifying scheduler of arrival at floor " + currentFloor);
-        //  eventQueue.elevatorArrived();
-    }
     /**
     * Simulates opening the elevator doors.
     */
@@ -479,6 +397,32 @@ public class Elevator implements Runnable {
     public void setCloseDoors() {doorsOpen = false;}
     public boolean getDoorBoolean() {return doorsOpen;}
     public String getCurrentState(){return currentState.toString();}
+
+    public static void main(String[] args){
+        System.out.println("Elevator Main Subsystem starting...");
+
+        SchedulerStore store = new SchedulerStore();
+        SchedulerReceiver schedulerReceiver = new SchedulerReceiver(store); 
+        // Scheduler scheduler = new Scheduler(store);  
+        Elevator elevator1 = new Elevator(1);
+        Elevator elevator2 = new Elevator(2);
+        Elevator elevator3 = new Elevator(3);
+        Elevator elevator4 = new Elevator(4);
+
+        // Thread schedulerThread = new Thread(scheduler);
+        Thread schedulerReceiverThread = new Thread(schedulerReceiver); 
+        Thread elevatorThread1 = new Thread(elevator1);
+        Thread elevatorThread2 = new Thread(elevator2);
+        Thread elevatorThread3 = new Thread(elevator3);
+        Thread elevatorThread4 = new Thread(elevator4);
+        
+        elevatorThread1.start();
+        elevatorThread2.start();
+        elevatorThread3.start();
+        elevatorThread4.start();
+        schedulerReceiverThread.start(); 
+        //schedulerThread.start();
+    }
 }
 
 
