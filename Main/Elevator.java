@@ -435,7 +435,7 @@ public class Elevator implements Runnable {
                 } else {
                     currentFloor--;
                 }
-                packetSender("04Moving," + direction + "," + currentFloor + "," + destinationFloor + "0");
+                packetSender("04" + elevatorId + ",Moving," + direction + "," + currentFloor + "," + destinationFloor + "0");
                 System.out.println("Elevator " + elevatorId + " is now at floor " + currentFloor);
             }
         }
