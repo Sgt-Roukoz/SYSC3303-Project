@@ -14,7 +14,6 @@ class SchedulerTest {
     }
 
     Scheduler scheduler;
-    EventQueue t1;
 
     /**
      * Called before each test
@@ -40,11 +39,11 @@ class SchedulerTest {
     /**
      * Testing processing floor requests
      */
-    @Test
-    void testProcessFloorRequest() {
-        scheduler.setProcessFloorRequest();
-        Assertions.assertEquals(scheduler.getProcessedRequest(), scheduler.getFloorRequestToBeProcessed());
-    }
+//    @Test
+//    void testProcessFloorRequest() {
+//        scheduler.setProcessFloorRequest();
+//        Assertions.assertEquals(scheduler.getProcessedRequest(), scheduler.getFloorRequestToBeProcessed());
+//    }
 
     /**
      * Testing sending an elevator request

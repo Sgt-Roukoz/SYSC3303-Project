@@ -2,13 +2,11 @@ package Main;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.net.*;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,20 +34,25 @@ public class Scheduler implements Runnable {
      * Scheduler class constructor
      *
      */
-    public Scheduler(SchedulerStoreInt store) throws RemoteException {
-        this.store = store;
+    public Scheduler() {
+
         sourceFloors = new HashMap<>();
         destFloors = new HashMap<>();
-        for(int i = 0; i < store.getElevators().size(); i++){
-            System.out.println("Elevator Found");
-            sourceFloors.put(i, new ArrayList<>());
-            destFloors.put(i, new ArrayList<>());
-        }
+
         try {
+            this.store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
             sendReceiveSocket = new DatagramSocket(100);
-        } catch (SocketException se) {
+            System.out.println(store.getElevators());
+            for(int i = 1; i <= store.getElevators().size(); i++){
+                System.out.println("Elevator Found");
+                sourceFloors.put(i, new ArrayList<>());
+                destFloors.put(i, new ArrayList<>());
+            }
+        } catch (SocketException | RemoteException se) {
             se.printStackTrace();
             System.exit(1);
+        } catch (MalformedURLException | NotBoundException e) {
+            throw new RuntimeException(e);
         }
         System.out.println(sourceFloors);
     }
@@ -66,15 +69,17 @@ public class Scheduler implements Runnable {
                 readFloorRequest();
                 if (floorRequestToBeProcessed != null) {
                     System.out.println("Scheduler is processing: " + floorRequestToBeProcessed);
-                    selectedElevator = store.findClosest(floorRequestToBeProcessed);
+                    selectedElevator = findClosest(floorRequestToBeProcessed);
+                    System.out.println(selectedElevator);
                     newEvent = processFloorRequest();
                     sendSourceFloorToElevator(newEvent);
                 }
 
-                Thread.sleep(15);
+                Thread.sleep(100);
 
             } catch (InterruptedException | RemoteException e) {
-                Thread.currentThread().interrupt();
+                e.printStackTrace();
+                //Thread.currentThread().interrupt();
                 System.out.println("Scheduler was interrupted.");
             }
         }
@@ -93,6 +98,7 @@ public class Scheduler implements Runnable {
      */
     private void readFloorRequest() throws RemoteException {
         floorRequestToBeProcessed = store.getFloorRequest();
+
     }
 
     /**
@@ -101,11 +107,15 @@ public class Scheduler implements Runnable {
     private String processFloorRequest() throws RemoteException {
         String translated = "03";
         if(((int) store.getElevators().get(selectedElevator).get(2)) > floorRequestToBeProcessed.getSourceFloor()){ // Finding where the request came from in relation to the elevator's current position
-            translated = translated.concat("DN,");
+            translated += "DN,";
         }else{
-            translated = translated.concat("UP,");
+            translated += "UP,";
         }
-        translated = translated.concat(String.valueOf(floorRequestToBeProcessed.getSourceFloor()));
+        int floor = floorRequestToBeProcessed.getSourceFloor();
+        if (floor < 9) translated += "0" + floor;
+        else translated += floor;
+
+        translated += "0";
 
         System.out.println("Scheduler: Processing floor event: " + floorRequestToBeProcessed);
         processedRequest = floorRequestToBeProcessed;
@@ -119,11 +129,14 @@ public class Scheduler implements Runnable {
     private String destFloor(int destFloor) throws RemoteException {
         String desti = "03";
         if(destFloor > (int) store.getElevators().get(selectedElevator).get(2)){
-            desti = desti.concat("UP,");
+            desti += "UP,";
         }else{
-            desti = desti.concat("DN,");
+            desti += "DN,";
         }
-        desti = desti.concat(String.valueOf(destFloor));
+        if (destFloor < 9) desti += "0" + destFloor;
+        else desti += destFloor;
+
+        desti += "0";
         return desti;
     }
 
@@ -132,17 +145,15 @@ public class Scheduler implements Runnable {
      * Send the source floor in the processed ElevatorEvent to the elevator in elevatorTracker
      */
     private void sendSourceFloorToElevator(String happening) {
-        System.out.println("Sending elevator event: " + processedRequest);
+        System.out.println("Sending elevator event: " + processedRequest + "to elevator: " + selectedElevator);
         //eventQueue.setElevatorRequest(processedRequest);
 
         try {
             byte[] toSend = HelperFunctions.generateMsg(happening);
             DatagramPacket sendPacket;
-            int ipAddress = (int) store.getElevators().get(selectedElevator).getFirst();
-            byte[] bytes = BigInteger.valueOf(ipAddress).toByteArray();
-            InetAddress address = InetAddress.getByAddress(bytes);
+            InetAddress ipAddress = (InetAddress) store.getElevators().get(selectedElevator).getFirst();
             sendPacket = new DatagramPacket(toSend, toSend.length,
-                    address, (int) store.getElevators().get(selectedElevator).get(1));
+                    ipAddress, (int) store.getElevators().get(selectedElevator).get(1));
             sendReceiveSocket.send(sendPacket);
         } catch (IOException e) {
             e.printStackTrace();
@@ -171,7 +182,6 @@ public class Scheduler implements Runnable {
     /**
      * Send the destination floor to the elevator once it reaches the source floor.
      * */
-
     private void sendDestFloorToElevator(int floor) {
         byte[] acknowledged;
         int msgLen;
@@ -180,11 +190,9 @@ public class Scheduler implements Runnable {
         try {
             byte[] toSend = HelperFunctions.generateMsg(destFloor(floor));
             DatagramPacket destPacket;
-            int ipAddress = (int) store.getElevators().get(selectedElevator).getFirst();
-            byte[] bytes = BigInteger.valueOf(ipAddress).toByteArray();
-            InetAddress address = InetAddress.getByAddress(bytes);
+            InetAddress ipAddress = (InetAddress) store.getElevators().get(selectedElevator).getFirst();
             destPacket = new DatagramPacket(toSend, toSend.length,
-                    address, (int) store.getElevators().get(selectedElevator).get(1));
+                    ipAddress, (int) store.getElevators().get(selectedElevator).get(1));
             sendReceiveSocket.send(destPacket);
         } catch (IOException e) {
             e.printStackTrace();
@@ -213,17 +221,17 @@ public class Scheduler implements Runnable {
      * */
     private void checkArrivedAtDest() throws RemoteException {
         Map<Integer, ArrayList<Serializable>> updatedElevs = store.getElevators();
-        System.out.println(destFloors);
+        //System.out.println(destFloors);
         for(int count = 1; count <= updatedElevs.size(); count++){
             for (Map.Entry<Integer, ArrayList<Integer>> entry : destFloors.entrySet()) {
                 if((int) updatedElevs.get(count).get(3) == 0){ //Is the elevator idle?
-                    if((int) updatedElevs.get(count).get(2) == entry.getValue().getFirst()){ //Does it match the destination floor? The destination floors should be in the order they came in, hence the 0
+                    if(!entry.getValue().isEmpty() && (int) updatedElevs.get(count).get(2) == entry.getValue().getFirst()){ //Does it match the destination floor? The destination floors should be in the order they came in, hence the 0
                         entry.getValue().removeFirst(); //Remove the destination floor
                         if(entry.getValue().getFirst() != null){ //Is there another destination after this one?
                             sendDestFloorToElevator(destFloors.get(count).getFirst());
                         }
                     }else{
-                        System.out.println("Elevator " + entry.getKey().toString() + " is Idle on floor " + updatedElevs.get(count).get(2).toString() + ". It should not be there!");
+                        //System.out.println("Elevator " + entry.getKey().toString() + " is Idle on floor " + updatedElevs.get(count).get(2).toString() + ". It should not be there!");
                     }
                 }
             }
@@ -235,18 +243,93 @@ public class Scheduler implements Runnable {
      * */
     private void checkArrivedAtSource() throws RemoteException {
         Map<Integer, ArrayList<Serializable>> sourceElevs = store.getElevators();
-        for(int count = 0; count < sourceElevs.size(); count++){
+        //System.out.println(sourceFloors);
+        for(int count = 1; count < sourceElevs.size(); count++){
             for (Map.Entry<Integer, ArrayList<Integer>> entry : sourceFloors.entrySet()) {
                 if((int) sourceElevs.get(count).get(3) == 0){ //Is the elevator idle?
-                    if((int) sourceElevs.get(count).get(2) == entry.getValue().getFirst()){ //Does it match the source floor? The destination floors should be in the order they came in, hence the 0
+                    if(!entry.getValue().isEmpty() && (int) sourceElevs.get(count).get(2) == entry.getValue().getFirst()){ //Does it match the source floor? The destination floors should be in the order they came in, hence the 0
                         entry.getValue().removeFirst(); //Remove the source floor
                         sendDestFloorToElevator(destFloors.get(count).getFirst());
                     }else{
-                        System.out.println("Elevator " + entry.getKey().toString() + " is Idle on floor " + sourceElevs.get(count).get(2).toString() + ". It should not be there!");
+                        //System.out.println("Elevator " + entry.getKey() + " is Idle on floor " + sourceElevs.get(count).get(2).toString() + ". It should not be there!");
                     }
                 }
             }
         }
+    }
+
+    private void checkArrivedAtAnyFloor() throws RemoteException {
+        Map<Integer, ArrayList<Serializable>> sourceElevs = store.getElevators();
+
+        for (Integer key : sourceElevs.keySet())
+        {
+            if ((int)sourceElevs.get(key).get(3) == 0)
+            {
+                if (!sourceFloors.get(key).isEmpty() && (int)sourceElevs.get(key).get(2) == sourceFloors.get(key).getFirst())
+                {
+                    sourceFloors.get(key).removeFirst();
+                    sendClosest(key);
+                } else if (!destFloors.get(key).isEmpty() && (int)sourceElevs.get(key).get(2) == destFloors.get(key).getFirst())
+                {
+                    destFloors.get(key).removeFirst();
+                    sendClosest(key);
+                }
+            }
+        }
+    }
+
+    private void sendCommand(int elevID, int floor)
+    {
+
+    }
+
+    private void sendClosest(Integer elevID)
+    {
+        if (sourceFloors.get(elevID).isEmpty() && !destFloors.get(elevID).isEmpty())
+        {
+            sendCommand(elevID, destFloors.get(elevID).getFirst());
+        }
+        else if (!sourceFloors.get(elevID).isEmpty() && destFloors.get(elevID).isEmpty())
+        {
+            sendCommand(elevID, sourceFloors.get(elevID).getFirst());
+        }
+        else if (sourceFloors.get(elevID).isEmpty() && destFloors.get(elevID).isEmpty())
+        {
+            //nothing
+        }
+        else
+        {
+            //if (sourceFloors.get(elevID).pe)
+        }
+    }
+
+    /**
+     * Iterate over elevators to find which is the closest for a given request.
+     *
+     * @param floor The floor event containing the source floor. The elevator which is closest is the one that will be
+     *              chosen to service the request.
+     *
+     * @return Returns the elevator ID of the closest elevator
+     */
+    public synchronized int findClosest(ElevatorEvent floor) {
+        Map<Integer, ArrayList<Serializable>> elevators;
+        try {
+            elevators = store.getElevators();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+
+        int previousFloor = (int) elevators.get(1).get(2);
+
+        int closestID = 1;
+        for (Map.Entry<Integer, ArrayList<Serializable>> entry : elevators.entrySet()) {
+            int check = (int) entry.getValue().get(2);
+            if(Math.abs(check - floor.getSourceFloor()) < Math.abs(previousFloor - floor.getSourceFloor())){
+                previousFloor = check;
+                closestID = entry.getKey();
+            }
+        }
+        return closestID;
     }
 
     /*
@@ -279,12 +362,12 @@ public class Scheduler implements Runnable {
     public static void main(String[] args)
     {
         try {
-            SchedulerStoreInt store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
-            Scheduler scheduler = new Scheduler(store);
+
+            Scheduler scheduler = new Scheduler();
 
             Thread schedulerThread = new Thread(scheduler);
             schedulerThread.start();
-        } catch (NotBoundException | MalformedURLException | RemoteException e) {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
 

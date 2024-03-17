@@ -1,5 +1,7 @@
 package Main;
 
+import java.io.Serializable;
+
 /**
  * ElevatorEvent class
  * encapsulates information required for an elevator subsystem to know its next course of action
@@ -8,7 +10,7 @@ package Main;
  * @version 2024-01-30
  */
 
-public class ElevatorEvent { //convert to Record?
+public class ElevatorEvent implements Serializable { //convert to Record?
     private final String time;
     private final int sourceFloor;
     private final ELEVATOR_BUTTON button;

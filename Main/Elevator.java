@@ -91,7 +91,11 @@ public class Elevator implements Runnable {
             if (translatedMessage.startsWith("03")) {
                 direction = translatedMessage.substring(2,4);
                 destinationFloor = Integer.parseInt(translatedMessage.substring(5,7));
-            } 
+            }
+            byte[] ackMessage = ("ACK" + translatedMessage).getBytes();
+            DatagramPacket sendPack = new DatagramPacket(ackMessage, ackMessage.length, receivePacket.getAddress(), receivePacket.getPort());
+            sendReceiveSocket.send(sendPack);
+
         } catch (IOException e) {
             e.printStackTrace();
         }

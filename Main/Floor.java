@@ -42,7 +42,7 @@ public class Floor implements Runnable{
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 this.processInput(line);
-                Thread.sleep(rand.nextInt(500,2000));
+                Thread.sleep(rand.nextInt(2000,4000));
             }
             scanner.close();
         } catch (FileNotFoundException | InterruptedException e) {
@@ -60,19 +60,19 @@ public class Floor implements Runnable{
         msg += split[1];
         if(split[2].equalsIgnoreCase("UP")) {
             System.out.println("Floor " + split[3] + " up lamp on");
-            msg += "UP";
+            msg += ",UP,";
         }
         else {
             System.out.println("Floor " + split[3] + " down lamp on");
-            msg += "DN";
+            msg += ",DN,";
         }
-        msg += split[3];
+        msg += split[3] + ",";
         msg += "0";
         byte[] byteMsg = HelperFunctions.generateMsg(msg);
 
         DatagramPacket receivePacket;
         try {
-            sendPacket = new DatagramPacket(byteMsg, 0, byteMsg.length, InetAddress.getLocalHost(), 5000);
+            sendPacket = new DatagramPacket(byteMsg, byteMsg.length, InetAddress.getLocalHost(), 5000);
             HelperFunctions.printDataInfo(sendPacket.getData(), sendPacket.getLength());
 
             // Initialize receivePacket before using it
@@ -89,10 +89,12 @@ public class Floor implements Runnable{
         while (attempt < 3 && !receivedResponse) { // Retry up to 3 times
             System.out.println(Thread.currentThread().getName() + ": Attempt " + (attempt + 1));
             try {
+                sendReceiveSocket.send(sendPacket);
                 // Attempt to receive the acknowledgment
                 sendReceiveSocket.receive(receivePacket);
                 // Handle the acknowledgment
-                receivedResponse = handleAcknowledgment(receivePacket, msg);
+                String received = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
+                if (received.equals("ACK"+msg)) receivedResponse = true;
             } catch (SocketTimeoutException ste) {
                 // Handle timeout exception
                 System.out.println(Thread.currentThread().getName() + ": Timeout. Resending packet.");
@@ -109,16 +111,6 @@ public class Floor implements Runnable{
         }
     }
 
-    /**
-     * Handles an acknowledgment packet received from the server.
-     *
-     * @param acknowledgmentPacket The DatagramPacket containing the acknowledgment received from the server.
-     */
-    private boolean handleAcknowledgment(DatagramPacket acknowledgmentPacket, String msg) {
-        // Handle the acknowledgment packet received from the server
-        String acknowledgementString = HelperFunctions.translateMsg(acknowledgmentPacket.getData(), acknowledgmentPacket.getLength());
-        return acknowledgementString.equals("ACK" + msg);
-    }
 
     /**
      * Runs this thread
