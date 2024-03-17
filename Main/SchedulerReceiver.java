@@ -70,7 +70,7 @@ public class SchedulerReceiver implements Runnable {
 
 
                 }
-                // Send acknowledgment
+                // Send acknowledgment.
                 String ackMessage = "ACK" + messageForAck;
                 byte[] ackData = ackMessage.getBytes();
                 InetAddress returnAddress = receivePacket.getAddress();
