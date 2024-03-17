@@ -8,6 +8,7 @@ import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 
 /**
@@ -27,8 +28,8 @@ public class Scheduler implements Runnable {
     int selectedElevator;
     String newEvent;
 
-    private Map<Integer, ArrayList<Integer>> sourceFloors;
-    private Map<Integer, ArrayList<Integer>> destFloors;
+    private Map<Integer, LinkedList<Integer>> sourceFloors;
+    private Map<Integer, LinkedList<Integer>> destFloors;
 
     /**
      * Scheduler class constructor
@@ -45,8 +46,8 @@ public class Scheduler implements Runnable {
             System.out.println(store.getElevators());
             for(int i = 1; i <= store.getElevators().size(); i++){
                 System.out.println("Elevator Found");
-                sourceFloors.put(i, new ArrayList<>());
-                destFloors.put(i, new ArrayList<>());
+                sourceFloors.put(i, new LinkedList<>());
+                destFloors.put(i, new LinkedList<>());
             }
         } catch (SocketException | RemoteException se) {
             se.printStackTrace();
@@ -64,8 +65,8 @@ public class Scheduler implements Runnable {
     public void run() {
         while (!Thread.interrupted()) {
             try {
-                if (arrayNotEmpty(sourceFloors)) checkArrivedAtDest();
-                if (arrayNotEmpty(destFloors)) checkArrivedAtSource();
+                if (!sourceFloors.isEmpty()) checkArrivedAtDestination();
+                if (!destFloors.isEmpty()) checkArrivedAtSource();
                 readFloorRequest();
                 if (floorRequestToBeProcessed != null) {
                     System.out.println("Scheduler is processing: " + floorRequestToBeProcessed);
@@ -151,7 +152,7 @@ public class Scheduler implements Runnable {
         try {
             byte[] toSend = HelperFunctions.generateMsg(happening);
             DatagramPacket sendPacket;
-            InetAddress ipAddress = (InetAddress) store.getElevators().get(selectedElevator).getFirst();
+            InetAddress ipAddress = (InetAddress) store.getElevators().get(selectedElevator).get(0);
             sendPacket = new DatagramPacket(toSend, toSend.length,
                     ipAddress, (int) store.getElevators().get(selectedElevator).get(1));
             sendReceiveSocket.send(sendPacket);
@@ -175,55 +176,26 @@ public class Scheduler implements Runnable {
         System.out.println("Scheduler: Source ACK received: ");
         HelperFunctions.printDataInfo(acknowledged, msgLen);
 
-        sourceFloors.get(selectedElevator).add(processedRequest.getSourceFloor());
-        destFloors.get(selectedElevator).add(processedRequest.getDestFloor());
+        //sendCommand();
+
     }
 
     /**
      * Send the destination floor to the elevator once it reaches the source floor.
      * */
     private void sendDestFloorToElevator(int floor) {
-        byte[] acknowledged;
-        int msgLen;
-        DatagramPacket receivePacket;
 
-        try {
-            byte[] toSend = HelperFunctions.generateMsg(destFloor(floor));
-            DatagramPacket destPacket;
-            InetAddress ipAddress = (InetAddress) store.getElevators().get(selectedElevator).getFirst();
-            destPacket = new DatagramPacket(toSend, toSend.length,
-                    ipAddress, (int) store.getElevators().get(selectedElevator).get(1));
-            sendReceiveSocket.send(destPacket);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        acknowledged = new byte[100];
-        receivePacket = new DatagramPacket(acknowledged, acknowledged.length);
-
-        try {
-            // Block until Elevator acknowledges the destination packet
-            sendReceiveSocket.receive(receivePacket);
-        } catch(IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        msgLen = receivePacket.getLength();
-        System.out.println("Scheduler: Destination ACK received:");
-        HelperFunctions.printDataInfo(acknowledged, msgLen);
 
     }
 
     /**
      * Check if any elevators have arrived at a destination floor, and send them to their next destination floor if they have one.
      * */
-    private void checkArrivedAtDest() throws RemoteException {
+    private void checkArrivedAtDestination() throws RemoteException {
         Map<Integer, ArrayList<Serializable>> updatedElevs = store.getElevators();
         //System.out.println(destFloors);
         for(int count = 1; count <= updatedElevs.size(); count++){
-            for (Map.Entry<Integer, ArrayList<Integer>> entry : destFloors.entrySet()) {
+            for (Map.Entry<Integer, LinkedList<Integer>> entry : destFloors.entrySet()) {
                 if((int) updatedElevs.get(count).get(3) == 0){ //Is the elevator idle?
                     if(!entry.getValue().isEmpty() && (int) updatedElevs.get(count).get(2) == entry.getValue().getFirst()){ //Does it match the destination floor? The destination floors should be in the order they came in, hence the 0
                         entry.getValue().removeFirst(); //Remove the destination floor
@@ -231,7 +203,9 @@ public class Scheduler implements Runnable {
                             sendDestFloorToElevator(destFloors.get(count).getFirst());
                         }
                     }else{
-                        //System.out.println("Elevator " + entry.getKey().toString() + " is Idle on floor " + updatedElevs.get(count).get(2).toString() + ". It should not be there!");
+                        if(!destFloors.isEmpty()){
+                            System.out.println("Elevator " + entry.getKey().toString() + " is Idle on floor " + updatedElevs.get(count).get(2).toString() + ". It should not be there!");
+                        }
                     }
                 }
             }
@@ -245,13 +219,16 @@ public class Scheduler implements Runnable {
         Map<Integer, ArrayList<Serializable>> sourceElevs = store.getElevators();
         //System.out.println(sourceFloors);
         for(int count = 1; count < sourceElevs.size(); count++){
-            for (Map.Entry<Integer, ArrayList<Integer>> entry : sourceFloors.entrySet()) {
+            for (Map.Entry<Integer, LinkedList<Integer>> entry : sourceFloors.entrySet()) {
                 if((int) sourceElevs.get(count).get(3) == 0){ //Is the elevator idle?
                     if(!entry.getValue().isEmpty() && (int) sourceElevs.get(count).get(2) == entry.getValue().getFirst()){ //Does it match the source floor? The destination floors should be in the order they came in, hence the 0
                         entry.getValue().removeFirst(); //Remove the source floor
                         sendDestFloorToElevator(destFloors.get(count).getFirst());
                     }else{
-                        //System.out.println("Elevator " + entry.getKey() + " is Idle on floor " + sourceElevs.get(count).get(2).toString() + ". It should not be there!");
+                        if(!sourceFloors.isEmpty()){
+                            System.out.println("Elevator " + entry.getKey() + " is Idle on floor " + sourceElevs.get(count).get(2).toString() + ". It should not be there!");
+                        }
+
                     }
                 }
             }
@@ -280,6 +257,36 @@ public class Scheduler implements Runnable {
 
     private void sendCommand(int elevID, int floor)
     {
+        byte[] acknowledged;
+        int msgLen;
+        DatagramPacket receivePacket;
+
+        try {
+            byte[] toSend = HelperFunctions.generateMsg(destFloor(floor));
+            DatagramPacket destPacket;
+            InetAddress ipAddress = (InetAddress) store.getElevators().get(elevID).get(0);
+            destPacket = new DatagramPacket(toSend, toSend.length,
+                    ipAddress, (int) store.getElevators().get(elevID).get(1));
+            sendReceiveSocket.send(destPacket);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        acknowledged = new byte[100];
+        receivePacket = new DatagramPacket(acknowledged, acknowledged.length);
+
+        try {
+            // Block until Elevator acknowledges the destination packet
+            sendReceiveSocket.receive(receivePacket);
+        } catch(IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        msgLen = receivePacket.getLength();
+        System.out.println("Scheduler: Destination ACK received:");
+        HelperFunctions.printDataInfo(acknowledged, msgLen);
 
     }
 
@@ -329,6 +336,10 @@ public class Scheduler implements Runnable {
                 closestID = entry.getKey();
             }
         }
+
+        sourceFloors.get(closestID).add(floorRequestToBeProcessed.getSourceFloor());
+        destFloors.get(closestID).add(floorRequestToBeProcessed.getDestFloor());
+
         return closestID;
     }
 
