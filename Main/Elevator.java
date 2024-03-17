@@ -224,20 +224,25 @@ public class Elevator implements Runnable {
 
         SchedulerStore store = new SchedulerStore();
         SchedulerReceiver schedulerReceiver = new SchedulerReceiver(store); 
-        Thread schedulerReceiverThread = new Thread(schedulerReceiver); 
+        // Scheduler scheduler = new Scheduler(store);  
         Elevator elevator1 = new Elevator(1);
         // Elevator elevator2 = new Elevator(2);
         // Elevator elevator3 = new Elevator(3);
         // Elevator elevator4 = new Elevator(4);
+
+        // Thread schedulerThread = new Thread(scheduler);
+        Thread schedulerReceiverThread = new Thread(schedulerReceiver); 
         Thread elevatorThread1 = new Thread(elevator1);
         // Thread elevatorThread2 = new Thread(elevator2);
         // Thread elevatorThread3 = new Thread(elevator3);
         // Thread elevatorThread4 = new Thread(elevator4);
+        
         elevatorThread1.start();
         // elevatorThread2.start();
         // elevatorThread3.start();
         // elevatorThread4.start();
         schedulerReceiverThread.start(); 
+        //schedulerThread.start();
     }
 
     private static final long TIME_PER_FLOOR = 3000; // Average time per floor in milliseconds (Halved)
