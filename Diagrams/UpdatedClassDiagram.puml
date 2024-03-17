@@ -4,7 +4,6 @@
 class Elevator
 class ElevatorEvent
 class Floor
-class Main
 class Scheduler
 class SchedulerReceiver
 class SchedulerStore
@@ -83,6 +82,7 @@ class Elevator implements Runnable {
 #sendIdleStatusUpdate(): void
 #sendMovingStatusUpdate(): void
 +run(): void
+#checkForIncomingMessages(): void
 #moveToFloor(floor: int) throws InterruptedException : void
 #openDoors() throws InterruptedException: void
 #closeDoors() throws InterruptedException : void
@@ -103,14 +103,16 @@ ARRIVAL
 
 class ElevatorEvent{
 -time: String {readOnly}
--floor: int {readOnly}
+-sourceFloor: int {readOnly}
+-destFloor: int {readOnly}
 -button: ELEVATOR_BUTTON {readOnly}
 -car_button: int{readOnly}
 
 +ElevatorEvent(time: String, floor: int, button: ELEVATOR_BUTTON, car_button: int)
 +toString(): String
 +getTime(): String
-+getFloor(): int
++getSourceFloor(): int
++getDestFloor(): int
 +getButton(): ELEVATOR_BUTTON
 +getCar_button(): int
 }
@@ -127,25 +129,24 @@ elevatorArrived: boolean
 +run(): void
 }
 
-class Main{
-+{Static} main(args:String[]): void
-}
-
 class Scheduler implements Runnable{
 
 -sendReceiveSocket: DatagramSocket
 -floorRequestToBeProcessed: ElevatorEvent
 -processedRequest:ElevatorEvent
 -store: SchedulerStoreInt
-#int selectedElevator
--destinations: HashMap<Integer, ArrayList>
+-sourceFloors: Map<Integer, LinkedList<Integer>>
+-destFloors: Map<Integer, LinkedList<Integer>>
+-lastKnownDirection: Map<Integer, String>
 
 +Scheduler(store: SchedulerStoreInt)
 +run():void
 -readFloorRequest(): void
--processFloorRequest(): void
--destFloor(): String
--sendElevatorRequest(happening: String): void
+-checkArrivedAtAnyFloor(): void
+-createMessage(elevId: int, floor: int)
+-sendCommand(elevId: int, floor: int)
+-sendToClosest(elevId: Integer, currentFloor: int)
+-findClosest(floor: ElevatorEvent)
 +setReadFloorRequest(): void
 +setProcessFloorRequest(): void
 +setSendElevatorRequest(): void

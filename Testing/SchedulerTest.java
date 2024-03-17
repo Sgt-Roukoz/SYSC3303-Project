@@ -9,76 +9,51 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.net.MalformedURLException;
+import java.rmi.ConnectException;
+import java.rmi.Naming;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+
 class SchedulerTest {
     SchedulerTest() {
     }
 
     Scheduler scheduler;
+    SchedulerStoreInt store;
 
     /**
      * Called before each test
      */
-    /*@BeforeEach
-    void setUp()
-    {
-        t1 = new EventQueue();
-        SchedulerStore store = new SchedulerStore();
-        scheduler = new Scheduler(t1, store);
-
-    }*/
+    @BeforeEach
+    void setUp() throws RemoteException {
+        try {
+            store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
+        } catch (NotBoundException | ConnectException | MalformedURLException e) {
+            store = new SchedulerStore();
+        }
+        scheduler = new Scheduler(store);
+    }
 
     /**
      * Test reading floor requests
      */
-    /*@Test
-    void testReadFloorRequest() {
+    @Test
+    void testReadFloorRequest() throws RemoteException {
+
+        ElevatorEvent elevatorEvent = new ElevatorEvent("14:05:15.0", 3, ELEVATOR_BUTTON.UP, 5);
+        store.setFloorRequest(elevatorEvent);
         scheduler.setReadFloorRequest();
-        Assertions.assertEquals(scheduler.getFloorRequestToBeProcessed(), t1.getFloorRequest());
-    }*/
+        Assertions.assertEquals(scheduler.getFloorRequestToBeProcessed(), elevatorEvent);
+    }
 
     /**
      * Testing processing floor requests
      */
-//    @Test
-//    void testProcessFloorRequest() {
-//        scheduler.setProcessFloorRequest();
-//        Assertions.assertEquals(scheduler.getProcessedRequest(), scheduler.getFloorRequestToBeProcessed());
-//    }
-
-    /**
-     * Testing sending an elevator request
-     */
-    /*@Test
-    void testSendElevatorRequest() {
-        t1.setFloorRequest(new ElevatorEvent("14:05:15.0", 2, ELEVATOR_BUTTON.UP, 4));
-        scheduler.setReadFloorRequest();
+    @Test
+    void testProcessFloorRequest() {
         scheduler.setProcessFloorRequest();
-        scheduler.setSendElevatorRequest();
-        Assertions.assertEquals(t1.getElevatorRequest(), scheduler.getProcessedRequest());
-    }*/
+        Assertions.assertEquals(scheduler.getProcessedRequest(), scheduler.getFloorRequestToBeProcessed());
+    }
 
-    /**
-     * Testing scheduler state machine transitions
-     */
-    /*@Test
-    void testStateChange()
-    {
-        Thread testThread = new Thread(scheduler);
-        testThread.start();
-        t1.setFloorRequest(new ElevatorEvent("14:05:15.0", 2, ELEVATOR_BUTTON.UP, 4));
-        Assertions.assertEquals(Scheduler.SchedulerState.IDLE, scheduler.getState());
-        try {
-            Thread.sleep(15);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(Scheduler.SchedulerState.PROCESSING_COMMAND, scheduler.getState());
-        try {
-            Thread.sleep(15);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.assertEquals(Scheduler.SchedulerState.WAITING, scheduler.getState());
-        testThread.interrupt();
-    }*/
 }
