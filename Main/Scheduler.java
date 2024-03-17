@@ -33,14 +33,15 @@ public class Scheduler implements Runnable {
      * Scheduler class constructor
      *
      */
-    public Scheduler() {
+    public Scheduler(SchedulerStoreInt store) {
 
         sourceFloors = new HashMap<>();
         destFloors = new HashMap<>();
         lastKnownDirection = new HashMap<>();
 
+
         try {
-            this.store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
+            this.store =  store;
             sendReceiveSocket = new DatagramSocket(100);
             System.out.println(store.getElevators());
             for(Integer i : store.getElevators().keySet()){
@@ -52,8 +53,6 @@ public class Scheduler implements Runnable {
         } catch (SocketException | RemoteException se) {
             se.printStackTrace();
             System.exit(1);
-        } catch (MalformedURLException | NotBoundException e) {
-            throw new RuntimeException(e);
         }
         System.out.println(sourceFloors);
     }
@@ -577,8 +576,9 @@ public class Scheduler implements Runnable {
     public static void main(String[] args)
     {
         try {
+            SchedulerStoreInt store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
 
-            Scheduler scheduler = new Scheduler();
+            Scheduler scheduler = new Scheduler(store);
 
             Thread schedulerThread = new Thread(scheduler);
             schedulerThread.start();

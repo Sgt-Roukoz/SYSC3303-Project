@@ -71,7 +71,7 @@ class ElevatorTest {
         Assertions.assertEquals("Idle", testingElevator.getCurrentState());
 
         byte[] testMessage = "03UP,020".getBytes();
-        InetAddress address = (InetAddress) store.getElevators().get(1).getFirst();
+        InetAddress address = (InetAddress) store.getElevators().get(1).get(0);
         int port = (int) store.getElevators().get(1).get(1);
         DatagramPacket testPacket = new DatagramPacket(testMessage, testMessage.length, address, port);
         DatagramSocket socket = new DatagramSocket();
