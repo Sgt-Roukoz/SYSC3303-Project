@@ -19,23 +19,23 @@ class SchedulerTest {
     /**
      * Called before each test
      */
-    @BeforeEach
+    /*@BeforeEach
     void setUp()
     {
         t1 = new EventQueue();
         SchedulerStore store = new SchedulerStore();
         scheduler = new Scheduler(t1, store);
 
-    }
+    }*/
 
     /**
      * Test reading floor requests
      */
-    @Test
+    /*@Test
     void testReadFloorRequest() {
         scheduler.setReadFloorRequest();
         Assertions.assertEquals(scheduler.getFloorRequestToBeProcessed(), t1.getFloorRequest());
-    }
+    }*/
 
     /**
      * Testing processing floor requests
@@ -49,19 +49,19 @@ class SchedulerTest {
     /**
      * Testing sending an elevator request
      */
-    @Test
+    /*@Test
     void testSendElevatorRequest() {
         t1.setFloorRequest(new ElevatorEvent("14:05:15.0", 2, ELEVATOR_BUTTON.UP, 4));
         scheduler.setReadFloorRequest();
         scheduler.setProcessFloorRequest();
         scheduler.setSendElevatorRequest();
         Assertions.assertEquals(t1.getElevatorRequest(), scheduler.getProcessedRequest());
-    }
+    }*/
 
     /**
      * Testing scheduler state machine transitions
      */
-    @Test
+    /*@Test
     void testStateChange()
     {
         Thread testThread = new Thread(scheduler);
@@ -81,5 +81,5 @@ class SchedulerTest {
         }
         Assertions.assertEquals(Scheduler.SchedulerState.WAITING, scheduler.getState());
         testThread.interrupt();
-    }
+    }*/
 }

@@ -1,6 +1,7 @@
 package Main;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -8,8 +9,7 @@ import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.Map;
 
 /**
  * Scheduler class
@@ -21,32 +21,25 @@ import java.util.Queue;
  */
 
 public class Scheduler implements Runnable {
-    public enum SchedulerState {
-        IDLE,
-        PROCESSING_COMMAND,
-        WAITING
-    }
     private DatagramSocket sendReceiveSocket;
-    private SchedulerState state;
-    private final EventQueue eventQueue;
     private ElevatorEvent floorRequestToBeProcessed;
     private ElevatorEvent processedRequest;
     private SchedulerStore store;
     int selectedElevator;
+    String newEvent;
 
-    private HashMap<Integer, ArrayList> destinations;
+    private Map<Integer, ArrayList<Integer>> sourceFloors;
+    private Map<Integer, ArrayList<Integer>> destFloors;
 
     /**
      * Scheduler class constructor
      *
-     * @param eventQueue EventQueue object where various events will be stored
      */
-    public Scheduler(EventQueue eventQueue, SchedulerStore store) {
-        this.eventQueue = eventQueue;
-        this.state = SchedulerState.IDLE; // starting state
+    public Scheduler(SchedulerStore store) {
         this.store = store;
         for(int i = 0; i < store.getElevators().size(); i++){
-            destinations.put(i, new ArrayList());
+            sourceFloors.put(i, new ArrayList<>());
+            destFloors.put(i, new ArrayList<>());
         }
         try {
             sendReceiveSocket = new DatagramSocket(100);
@@ -61,31 +54,22 @@ public class Scheduler implements Runnable {
      */
     @Override
     public void run() {
-        while (eventQueue.processedEvents < eventQueue.maxEvents && !Thread.interrupted()) {
+        while (!Thread.interrupted()) {
+            checkArrivedAtDest();
+            checkArrivedAtSource();
+
             try {
-                switch (state) {
-                    case IDLE:
-                        readFloorRequest();
-                        if (floorRequestToBeProcessed != null) {
-                            System.out.println("Scheduler State: " + floorRequestToBeProcessed + ": Idle");
-                            state = SchedulerState.PROCESSING_COMMAND;
-                        }
-                        break;
-                    case PROCESSING_COMMAND:
-                        System.out.println("Scheduler State: PROCESSING_COMMAND");
-                        Thread.sleep(15);
-                        selectedElevator = store.findClosest(floorRequestToBeProcessed);
-                        String newEvent;
-                        newEvent = processFloorRequest();
-                        sendElevatorRequest(newEvent);
-                        state = SchedulerState.WAITING;
-                        break;
-                    case WAITING:
-                        System.out.println("Scheduler State: WAITING");
-                        Thread.sleep(15);
-                        state = SchedulerState.IDLE;
-                        break;
+                readFloorRequest();
+                if (floorRequestToBeProcessed != null) {
+                    System.out.println("Scheduler is processing: " + floorRequestToBeProcessed);
                 }
+                Thread.sleep(15);
+                selectedElevator = store.findClosest(floorRequestToBeProcessed);
+                newEvent = processFloorRequest();
+                sendSourceFloorToElevator(newEvent);
+
+                Thread.sleep(15);
+
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 System.out.println("Scheduler was interrupted.");
@@ -94,10 +78,10 @@ public class Scheduler implements Runnable {
     }
 
     /**
-     * Read an ElevatorEvent from the floor request queue in eventQueue
+     * Read an ElevatorEvent from the floor request queue in store
      */
     private void readFloorRequest() {
-        floorRequestToBeProcessed = eventQueue.getFloorRequest();
+        floorRequestToBeProcessed = store.getFloorRequest();
     }
 
     /**
@@ -105,10 +89,8 @@ public class Scheduler implements Runnable {
      */
     private String processFloorRequest() {
         String translated = "03";
-        if(((int) store.getElevators().get(selectedElevator).get(2)) >
-                floorRequestToBeProcessed.getSourceFloor()){ //Finding where the request came from in relation to the
-            // elevator's current position
-            translated.concat("DOWN,");
+        if(((int) store.getElevators().get(selectedElevator).get(2)) > floorRequestToBeProcessed.getSourceFloor()){ // Finding where the request came from in relation to the elevator's current position
+            translated.concat("DN,");
         }else{
             translated.concat("UP,");
         }
@@ -120,26 +102,26 @@ public class Scheduler implements Runnable {
     }
 
     /**
-     * Send the destination to the elevator after sending it the source floor
+     * Process and regurgitate the destination floor message to be sent to the elevator
      * */
-    private String destFloor(){
+    private String destFloor(int destFloor){
         String desti = "03";
-        if(floorRequestToBeProcessed.getDestFloor() > (int) store.getElevators().get(selectedElevator).get(2)){
+        if(destFloor > (int) store.getElevators().get(selectedElevator).get(2)){
             desti.concat("UP,");
         }else{
-            desti.concat("DOWN,");
+            desti.concat("DN,");
         }
-        desti.concat(String.valueOf(floorRequestToBeProcessed.getDestFloor()));
+        desti.concat(String.valueOf(destFloor));
         return desti;
     }
 
 
     /**
-     * Send the processed ElevatorEvent to the elevator queue in eventQueue
+     * Send the source floor in the processed ElevatorEvent to the elevator in elevatorTracker
      */
-    private void sendElevatorRequest(String happening) {
+    private void sendSourceFloorToElevator(String happening) {
         System.out.println("Sending elevator event: " + processedRequest);
-        eventQueue.setElevatorRequest(processedRequest);
+        //eventQueue.setElevatorRequest(processedRequest);
 
         try {
             byte[] toSend = HelperFunctions.generateMsg(happening);
@@ -167,19 +149,24 @@ public class Scheduler implements Runnable {
         }
 
         int msgLen = receivePacket.getLength();
-        System.out.println("Scheduler: Source ACK received:");
+        System.out.println("Scheduler: Source ACK received: ");
         HelperFunctions.printDataInfo(acknowledged, msgLen);
 
-        destinations.get(selectedElevator).add(processedRequest.getDestFloor());
+        sourceFloors.get(selectedElevator).add(processedRequest.getSourceFloor());
+        destFloors.get(selectedElevator).add(processedRequest.getDestFloor());
+    }
 
-        /*if(store.getElevators().get(selectedElevator).getStatus() != IDLE){ Meaning it's yet to arrive at the source floor
-            wait();
-        }
-        *
-        * */
+    /**
+     * Send the destination floor to the elevator once it reaches the source floor.
+     * */
+
+    private void sendDestFloorToElevator(int floor) {
+        byte[] acknowledged;
+        int msgLen;
+        DatagramPacket receivePacket;
 
         try {
-            byte[] toSend = HelperFunctions.generateMsg(destFloor());
+            byte[] toSend = HelperFunctions.generateMsg(destFloor(floor));
             DatagramPacket destPacket;
             int ipAddress = (int) store.getElevators().get(selectedElevator).get(0);
             byte[] bytes = BigInteger.valueOf(ipAddress).toByteArray();
@@ -207,38 +194,62 @@ public class Scheduler implements Runnable {
         System.out.println("Scheduler: Destination ACK received:");
         HelperFunctions.printDataInfo(acknowledged, msgLen);
 
-        /*if(store.getElevators().get(selectedElevator).getStatus() != IDLE){ Meaning it's yet to arrive at the dest floor
-            wait();
-        }else{
-            for(int i = 0; i < destinations.get(selectedElevator).size(); i++){ //Get the first dest floor that matches, as
-                                                                             //the floors are added in order
-                if(destinations.get(selectedElevator).get(i) == processedRequest.getDestFloor()){
-                    destinations.get(selectedElevator).remove(i);
-                    break;
-                }
+    }
 
+    /**
+     * Check if any elevators have arrived at a destination floor, and send them to their next destination floor if they have one.
+     * */
+    private void checkArrivedAtDest(){
+        Map<Integer, ArrayList<Serializable>> updatedElevs = store.getElevators();
+        for(int count = 0; count < updatedElevs.size(); count++){
+            for (Map.Entry<Integer, ArrayList<Integer>> entry : destFloors.entrySet()) {
+                if((int) updatedElevs.get(count).get(3) == 0){ //Is the elevator idle?
+                    if((int) updatedElevs.get(count).get(2) == entry.getValue().get(0)){ //Does it match the destination floor? The destination floors should be in the order they came in, hence the 0
+                        entry.getValue().remove(0); //Remove the destination floor
+                        if(entry.getValue().get(0) != null){ //Is there another destination after this one?
+                            sendDestFloorToElevator(destFloors.get(count).get(0));
+                        }
+                    }else{
+                        System.out.println("Elevator " + entry.getKey().toString() + " is Idle on floor " + updatedElevs.get(count).get(2).toString() + ". It should not be there!");
+                    }
+                }
             }
         }
-        *
-        * */
+    }
 
-        // eventQueue.processedEvents++;
+    /**
+     * Check if any elevators have arrived at a source floor, and send them to their first destination floor.
+     * */
+    private void checkArrivedAtSource(){
+        Map<Integer, ArrayList<Serializable>> sourceElevs = store.getElevators();
+        for(int count = 0; count < sourceElevs.size(); count++){
+            for (Map.Entry<Integer, ArrayList<Integer>> entry : sourceFloors.entrySet()) {
+                if((int) sourceElevs.get(count).get(3) == 0){ //Is the elevator idle?
+                    if((int) sourceElevs.get(count).get(2) == entry.getValue().get(0)){ //Does it match the source floor? The destination floors should be in the order they came in, hence the 0
+                        entry.getValue().remove(0); //Remove the source floor
+                        sendDestFloorToElevator(destFloors.get(count).get(0));
+                    }else{
+                        System.out.println("Elevator " + entry.getKey().toString() + " is Idle on floor " + sourceElevs.get(count).get(2).toString() + ". It should not be there!");
+                    }
+                }
+            }
+        }
     }
 
     /*
     Setters and getters for testing purposes
      */
     public void setReadFloorRequest() {
-        this.floorRequestToBeProcessed = this.eventQueue.getFloorRequest();
+        this.floorRequestToBeProcessed = this.store.getFloorRequest();
     }
 
     public void setProcessFloorRequest() {
         this.processedRequest = this.floorRequestToBeProcessed;
     }
 
-    public void setSendElevatorRequest() {
+    /*public void setSendElevatorRequest() {
         this.eventQueue.setElevatorRequest(this.processedRequest);
-    }
+    }*/
 
     public ElevatorEvent getFloorRequestToBeProcessed() {
         return this.floorRequestToBeProcessed;
@@ -248,9 +259,5 @@ public class Scheduler implements Runnable {
         return this.processedRequest;
     }
 
-    public SchedulerState getState()
-    {
-        return state;
-    }
 }
 
