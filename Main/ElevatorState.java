@@ -1,3 +1,7 @@
+/**
+ * Interface for Elevator States for the Elevator State Machine
+ */
+
 package Main;
 
 public interface ElevatorState {
