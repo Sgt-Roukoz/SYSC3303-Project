@@ -25,9 +25,13 @@ public class SchedulerReceiver implements Runnable {
                 serverSocket.receive(receivePacket);
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
 
+                // Extract the message for acknowledgment
+                String messageForAck = translatedMessage.trim(); // Trim to remove any trailing zeros
+
+
                 // Handle message based on type
                 if (translatedMessage.startsWith("01")) { //FloorEvent message
-                    // Assuming the message is something like "0102UP0300" for FloorEvent.
+                    // Assuming the message is something like "0102UP0300" for FloorEvent
                     int sourceFloor = Integer.parseInt(translatedMessage.substring(2, 4));
                     String directionStr = translatedMessage.substring(4, 6); // "UP" or "DN"
                     int destinationFloor = Integer.parseInt(translatedMessage.substring(6, 8));
@@ -66,6 +70,14 @@ public class SchedulerReceiver implements Runnable {
 
 
                 }
+                // Send acknowledgment.
+                String ackMessage = "ACK" + messageForAck;
+                byte[] ackData = ackMessage.getBytes();
+                InetAddress returnAddress = receivePacket.getAddress();
+                int returnPort = receivePacket.getPort();
+                DatagramPacket ackPacket = new DatagramPacket(ackData, ackData.length, returnAddress, returnPort);
+                serverSocket.send(ackPacket);
+
 
                 // Clear the buffer after handling the message
                 receiveData = new byte[1024];
