@@ -31,7 +31,7 @@ public class SchedulerReceiver implements Runnable {
 
                 // Handle message based on type
                 if (translatedMessage.startsWith("01")) { // FloorEvent message
-                    // Extract message details, assuming a format like "01,srcFloor,Direction,destFloor"
+                    // Extract message details, assuming a format like "01,srcFloor,Direction,destFloor".
                     String[] messageParts = translatedMessage.substring(2, translatedMessage.length() - 1).split(",");
                     if(messageParts.length >= 3) {
                         int sourceFloor = Integer.parseInt(messageParts[0].trim());
