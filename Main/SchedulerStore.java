@@ -8,9 +8,11 @@ package Main;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.rmi.RemoteException;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 
-public class SchedulerStore {
+public class SchedulerStore extends UnicastRemoteObject implements SchedulerStoreInt {
     private ArrayDeque<ElevatorEvent> floorRequests;
     private Map<Integer, ArrayList<Serializable>> elevators;
     //Map with elevator ID as keys, and arraylist containing: 0 as address, 1 as port, 2 as current floor, 3 as moving direction and 4 as destination
@@ -18,27 +20,14 @@ public class SchedulerStore {
     // moving direction is 0 if Idle, 1 if UP and 2 if DOWN
     // destination is 0 if none (idle) and some floor number if not.
 
-    public int processedEvents = 0;
-    public int maxEvents = 6; // Max events for testing purposes
-    private final int maxQueue = 3;
-
     /**
      * Constructor for SchedulerStore
      */
-    public SchedulerStore()
+    public SchedulerStore() throws RemoteException
     {
-        floorRequests = new ArrayDeque<ElevatorEvent>();
+        super();
+        floorRequests = new ArrayDeque<>();
         elevators = new HashMap<>();
-    }
-
-    /**
-     * Method holds the wait() function for synchronization purposes
-     */
-    private void mutex()
-    {
-        try {
-            wait();
-        } catch (InterruptedException ignored) {}
     }
 
     /**
@@ -49,7 +38,9 @@ public class SchedulerStore {
      */
     public synchronized void addElevator (Integer elevID, InetAddress address, Integer port)
     {
+        System.out.println("Adding elevator");
         elevators.put(elevID, new ArrayList<>(Arrays.asList(address, port, 1, 0, 0)));
+        System.out.println(elevators);
     }
 
     /**
@@ -99,14 +90,8 @@ public class SchedulerStore {
      */
     public synchronized ElevatorEvent getFloorRequest()
     {
-        while (floorRequests.isEmpty())
-        {
-            mutex();
-        }
-
-        ElevatorEvent returningEvent = floorRequests.remove();
-        notifyAll();
-        return returningEvent;
+        if (floorRequests.isEmpty()) return null;
+        return floorRequests.remove();
     }
 
     /**
@@ -116,7 +101,7 @@ public class SchedulerStore {
      */
     public synchronized void setFloorRequest(ElevatorEvent event)
     {
-        floorRequests.add(event);
-        notifyAll();
+        floorRequests.addLast(event);
+        System.out.println("Added " + event);
     }
 }
