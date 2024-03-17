@@ -6,6 +6,7 @@ package Main;
 class Idle implements ElevatorState {
     @Override
     public void entry(Elevator context) {
+        context.checkForIncomingMessages();
         context.sendIdleStatusUpdate();
         System.out.println("Elevator " + context.getElevatorId() + " is Idle");
         context.waitMessageScheduler();

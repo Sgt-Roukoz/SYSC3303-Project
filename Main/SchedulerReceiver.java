@@ -17,19 +17,17 @@ public class SchedulerReceiver implements Runnable {
     @Override
     public void run() {
         try (DatagramSocket serverSocket = new DatagramSocket(port)){
-            byte[] receiveData = new byte[1024];
-
             System.out.println("Scheduler Receiver running on port " + port);
 
             while (true) {
+                byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 serverSocket.receive(receivePacket);
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
 
                 // Extract the message for acknowledgment
                 String messageForAck = translatedMessage.trim(); // Trim to remove any trailing zeros
-
-
+                System.out.println("Received Message: " + translatedMessage);
                 // Handle message based on type
                 if (translatedMessage.startsWith("01")) { // FloorEvent message
                     // Extract message details, assuming a format like "01srcFloor,Direction,destFloor".
@@ -48,7 +46,7 @@ public class SchedulerReceiver implements Runnable {
                         // Store the event
                         store.setFloorRequest(event);
                     }
-                } if (translatedMessage.startsWith("02")) { // IEXIST message
+                }else if (translatedMessage.startsWith("02")) { // IEXIST message
                     int elevatorID = Integer.parseInt(translatedMessage.substring(2, translatedMessage.length() - 1));
 
 
@@ -57,7 +55,7 @@ public class SchedulerReceiver implements Runnable {
                 } else if (translatedMessage.startsWith("04")) { // Elevator Status Update message
                     // Correctly parsing the message by excluding the trailing 0 byte
                     String[] parts = translatedMessage.substring(2, translatedMessage.length() - 1).split(",");
-                    if(parts.length >= 5) { // elevatorID, status, direction (for moving), current floor, destination floor
+                    if(parts.length >= 3) { // elevatorID, status, direction (for moving), current floor, destination floor
                         int elevatorID = Integer.parseInt(parts[0]);
                         String statusType = parts[1];
 
@@ -73,7 +71,13 @@ public class SchedulerReceiver implements Runnable {
                             store.updateElevator(elevatorID, 3, "UP".equals(direction) ? 1 : 2); // Assuming '1' for up and '2' for down
                             store.updateElevator(elevatorID, 4, destinationFloor);
                         }
+
+                        System.out.println(store.getElevators());
                     }
+                }
+                else
+                {
+                    continue;
                 }
 
                 // Send acknowledgment.
@@ -84,9 +88,8 @@ public class SchedulerReceiver implements Runnable {
                 DatagramPacket ackPacket = new DatagramPacket(ackData, ackData.length, returnAddress, returnPort);
                 serverSocket.send(ackPacket);
 
-
+                System.out.println("Sending: " + messageForAck);
                 // Clear the buffer after handling the message
-                receiveData = new byte[1024];
             }
         } catch (IOException ignored) {
         }

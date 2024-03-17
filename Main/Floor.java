@@ -42,7 +42,7 @@ public class Floor implements Runnable{
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 this.processInput(line);
-                Thread.sleep(rand.nextInt(2000,4000));
+                Thread.sleep(rand.nextInt(3000,6000));
             }
             scanner.close();
         } catch (FileNotFoundException | InterruptedException e) {
