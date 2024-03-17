@@ -23,7 +23,8 @@ class SchedulerTest {
     void setUp()
     {
         t1 = new EventQueue();
-        scheduler = new Scheduler(t1);
+        SchedulerStore store = new SchedulerStore();
+        scheduler = new Scheduler(t1, store);
 
     }
 

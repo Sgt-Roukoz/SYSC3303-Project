@@ -7,7 +7,8 @@ package Main;
 public class Main {
     public static void main(String[] args) {
         EventQueue eventQueue = new EventQueue();
-        Scheduler scheduler = new Scheduler(eventQueue);
+        SchedulerStore store = new SchedulerStore();
+        Scheduler scheduler = new Scheduler(eventQueue, store);
         Elevator elevator = new Elevator(eventQueue, 1);
         Floor floor = new Floor("Floor 1", eventQueue);
 
