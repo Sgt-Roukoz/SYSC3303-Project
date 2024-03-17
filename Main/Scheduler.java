@@ -440,7 +440,7 @@ public class Scheduler implements Runnable {
             {
                 int shortestDistance = 22;
                 ArrayList<Serializable> beingChecked = elevators.get(key);
-                if ((int) beingChecked.get(3) == 0 && destFloors.get(key).isEmpty())
+                if ((int) beingChecked.get(3) == 0 && destFloors.get(key).isEmpty() && (int) beingChecked.get(2) > floor.getSourceFloor())
                 {
                     if(floor.getSourceFloor() - (int) beingChecked.get(2) < shortestDistance){
                         closestID = key;
@@ -450,10 +450,54 @@ public class Scheduler implements Runnable {
             }
 
             // if not, next find if there are any elevators that are idle below it (with no destinations)
-            /*
-            * if not, next find if there are any elevators moving in the same direction that will pass src;
-            * if not, select elevator with closest lowest value in destination array*/
 
+            if(closestID == 0){
+                for(Integer key: elevators.keySet()){
+                    int shortestDistance = 22;
+                    ArrayList<Serializable> beingChecked = elevators.get(key);
+                    if ((int) beingChecked.get(3) == 0 && destFloors.get(key).isEmpty() && (int) beingChecked.get(2) < floor.getSourceFloor())
+                    {
+                        if((int) beingChecked.get(2) - floor.getSourceFloor() < shortestDistance){
+                            closestID = key;
+                            shortestDistance = floor.getSourceFloor() - (int) beingChecked.get(2);
+                        }
+                    }
+                }
+            }
+
+            //if not, next find if there are any elevators moving in the same direction that will pass src;
+            if(closestID == 0){
+                for (Integer key: elevators.keySet())
+                {
+                    int closestSoFar = 22;
+
+                    ArrayList<Serializable> beingChecked = elevators.get(key);
+                    if ((int) beingChecked.get(3) == 2 && (int) beingChecked.get(2) > floor.getSourceFloor() && (int) beingChecked.get(4) < floor.getSourceFloor())
+                    {
+                        if(closestSoFar > ((int) elevators.get(key).get(2) - floor.getSourceFloor())){
+                            closestSoFar = (int) elevators.get(key).get(2) - floor.getSourceFloor();
+                            closestID = key;
+                        }
+                    }
+                }
+            }
+            /* if not, select elevator with closest lowest value in destination array*/
+            if(closestID == 0){
+                for (Integer key: elevators.keySet())
+                {
+
+                    int closestHighest = 22;
+
+                    ArrayList<Serializable> beingChecked = elevators.get(key);
+                    if ((int) beingChecked.get(3) == 2 && (int) beingChecked.get(4) > floor.getSourceFloor())
+                    {
+                        if((int) beingChecked.get(4) < closestHighest){
+                            closestHighest = (int) beingChecked.get(4);
+                            closestID = key;
+                        }
+                    }
+                }
+            }
         }
 
 //        for (Map.Entry<Integer, ArrayList<Serializable>> entry : elevators.entrySet()) {
