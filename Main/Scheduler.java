@@ -22,12 +22,11 @@ public class Scheduler implements Runnable {
     private ElevatorEvent floorRequestToBeProcessed;
     private ElevatorEvent processedRequest;
     private SchedulerStoreInt store;
-    //int selectedElevator;
-    String newEvent;
-
     private Map<Integer, LinkedList<Integer>> sourceFloors;
     private Map<Integer, LinkedList<Integer>> destFloors;
     private Map<Integer, String> lastKnownDirection;
+
+    private Map<Integer, Map<Integer, Integer>> srcDestPairs;
 
     /**
      * Scheduler class constructor
@@ -38,7 +37,7 @@ public class Scheduler implements Runnable {
         sourceFloors = new HashMap<>();
         destFloors = new HashMap<>();
         lastKnownDirection = new HashMap<>();
-
+        srcDestPairs = new HashMap<>();
 
         try {
             this.store =  store;
@@ -48,6 +47,7 @@ public class Scheduler implements Runnable {
                 System.out.println("Elevator Found");
                 sourceFloors.put(i, new LinkedList<>());
                 destFloors.put(i, new LinkedList<>());
+                srcDestPairs.put(i, new HashMap<>());
                 lastKnownDirection.put(i, "IDLE");
             }
         } catch (SocketException | RemoteException se) {
@@ -101,18 +101,15 @@ public class Scheduler implements Runnable {
             {
                 if (!sourceFloors.get(key).isEmpty() && contains(sourceFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a source floor?
                 {
+                    destFloors.get(key).add(srcDestPairs.get(key).remove((Integer) sourceElevs.get(key).get(2)));
                     sourceFloors.get(key).removeFirstOccurrence(sourceElevs.get(key).get(2));
                     Thread.sleep(200);
                     sendToClosest(key);
                 } else if (!destFloors.get(key).isEmpty() && contains(destFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a destination floor?
                 {
                     destFloors.get(key).removeFirstOccurrence(sourceElevs.get(key).get(2));
-                    if (destFloors.get(key).isEmpty()) lastKnownDirection.put(key, "IDLE"); //was this the last destination?
-                    else
-                    {
-                        Thread.sleep(200);
-                        sendToClosest(key);
-                    }
+                    Thread.sleep(200);
+                    sendToClosest(key);
                 }
             }
         }
@@ -436,7 +433,7 @@ public class Scheduler implements Runnable {
         int srcFloor = floorRequestToBeProcessed.getSourceFloor();
         int destFloor = floorRequestToBeProcessed.getDestFloor();
         sourceFloors.get(closestID).add(srcFloor);
-        destFloors.get(closestID).add(destFloor);
+        srcDestPairs.get(closestID).put(srcFloor, destFloor);
 
 
         if ((int) elevators.get(closestID).get(2) > floorRequestToBeProcessed.getSourceFloor()) { //determine last direction
@@ -472,10 +469,6 @@ public class Scheduler implements Runnable {
     public void setProcessFloorRequest() {
         this.processedRequest = this.floorRequestToBeProcessed;
     }
-
-    /*public void setSendElevatorRequest() {
-        this.eventQueue.setElevatorRequest(this.processedRequest);
-    }*/
 
     public ElevatorEvent getFloorRequestToBeProcessed() {
         return this.floorRequestToBeProcessed;
