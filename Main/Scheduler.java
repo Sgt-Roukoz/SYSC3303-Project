@@ -195,6 +195,14 @@ public class Scheduler implements Runnable {
         HelperFunctions.printDataInfo(acknowledged, msgLen);
     }
 
+    /**
+     * Find next floor to go to based on direction
+     * @param floor current floor
+     * @param destfloors list of destination floors
+     * @param srcFloors list of source floors
+     * @param direction current direction
+     * @return Returns next floor
+     */
     private int findNextClosest(int floor, LinkedList<Integer> destfloors, LinkedList<Integer> srcFloors, String direction){
         int closest = 23;
         int chosenFloor = 0;
@@ -231,6 +239,10 @@ public class Scheduler implements Runnable {
         return chosenFloor;
     }
 
+    /**
+     * Send elevator to next destination
+     * @param elevID Target elevator
+     */
     private void sendToClosest(Integer elevID)
     {
         if (sourceFloors.get(elevID).isEmpty() && !destFloors.get(elevID).isEmpty())
@@ -273,7 +285,7 @@ public class Scheduler implements Runnable {
      *              chosen to service the request.
      *
      */
-    public synchronized void findClosest(ElevatorEvent floor) {
+    public void findClosest(ElevatorEvent floor) {
         Map<Integer, ArrayList<Serializable>> elevators;
         try {
             elevators = store.getElevators();
@@ -418,14 +430,6 @@ public class Scheduler implements Runnable {
                 }
             }
         }
-
-//        for (Map.Entry<Integer, ArrayList<Serializable>> entry : elevators.entrySet()) {
-//            int check = (int) entry.getValue().get(2);
-//            if(Math.abs(check - floor.getSourceFloor()) < Math.abs(previousFloor - floor.getSourceFloor())){
-//                previousFloor = check;
-//                closestID = entry.getKey();
-//            }
-//        }
 
 
         System.out.println(closestID);

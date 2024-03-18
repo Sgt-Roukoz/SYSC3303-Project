@@ -143,10 +143,12 @@ class Scheduler implements Runnable{
 +run():void
 -readFloorRequest(): void
 -checkArrivedAtAnyFloor(): void
--createMessage(elevId: int, floor: int)
--sendCommand(elevId: int, floor: int)
--sendToClosest(elevId: Integer, currentFloor: int)
--findClosest(floor: ElevatorEvent)
+-contains(list: LinkedList<Integer>, value: Integer): boolean
+-createMessage(elevId: int, floor: int): void
+-sendCommand(elevId: int, floor: int): void
+-findNextClosest(floor: int, destfloors: LinkedList<Integer>, srcFloors: LinkedList<Integer>, direction: String): int
+-sendToClosest(elevId: Integer, currentFloor: int): void
+-findClosest(floor: ElevatorEvent): void
 +setReadFloorRequest(): void
 +setProcessFloorRequest(): void
 +setSendElevatorRequest(): void
