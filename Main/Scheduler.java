@@ -41,7 +41,7 @@ public class Scheduler implements Runnable {
 
         try {
             this.store =  store;
-            sendReceiveSocket = new DatagramSocket(100);
+            sendReceiveSocket = new DatagramSocket();
             System.out.println(store.getElevators());
             for(Integer i : store.getElevators().keySet()){
                 System.out.println("Elevator Found");
