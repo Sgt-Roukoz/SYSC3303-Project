@@ -9,6 +9,7 @@ import org.junit.jupiter.api.*;
 
 import java.io.IOException;
 import java.net.*;
+import java.rmi.ConnectException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
@@ -16,17 +17,19 @@ import java.rmi.registry.LocateRegistry;
 
 class SchedulerReceiverTest {
     static SchedulerReceiver receiver;
-    static SchedulerStore store;
+    static SchedulerStoreInt store;
 
     SchedulerReceiverTest(){
     }
 
     @BeforeAll
     static void registrySetup() throws RemoteException, MalformedURLException, NotBoundException {
-        store = new SchedulerStore();
-        LocateRegistry.createRegistry(1099);
-        // Bind the remote object's stub in the registry
-        Naming.rebind("store", store);
+        try {
+            store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
+        } catch (NotBoundException | ConnectException e) {
+            store = new SchedulerStore();
+        }
+
         receiver = new SchedulerReceiver(store);
     }
 

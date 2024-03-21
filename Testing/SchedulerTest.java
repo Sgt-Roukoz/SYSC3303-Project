@@ -44,7 +44,7 @@ class SchedulerTest {
         ElevatorEvent elevatorEvent = new ElevatorEvent("14:05:15.0", 3, ELEVATOR_BUTTON.UP, 5);
         store.setFloorRequest(elevatorEvent);
         scheduler.setReadFloorRequest();
-        Assertions.assertEquals(scheduler.getFloorRequestToBeProcessed(), elevatorEvent);
+        Assertions.assertEquals(scheduler.getFloorRequestToBeProcessed().toString(), elevatorEvent.toString());
     }
 
     /**
