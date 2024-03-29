@@ -82,4 +82,13 @@ public class SchedulerStore extends UnicastRemoteObject implements SchedulerStor
     {
         floorRequests.addLast(event);
     }
+
+    /**
+     * Removes an elevator from the elevator list
+     * @param id ID of elevator being removed
+     */
+    public synchronized void removeElevator(int id)
+    {
+        elevators.remove(id);
+    }
 }

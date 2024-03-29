@@ -14,4 +14,5 @@ public interface SchedulerStoreInt extends Remote {
     void updateElevator(Integer elevID, int itemToEdit, Serializable value) throws RemoteException;
     ElevatorEvent getFloorRequest() throws RemoteException;
     void setFloorRequest(ElevatorEvent event) throws RemoteException;
+    void removeElevator(int id) throws RemoteException;
 }
