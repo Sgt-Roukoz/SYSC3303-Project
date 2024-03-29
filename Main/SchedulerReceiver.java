@@ -52,7 +52,20 @@ public class SchedulerReceiver implements Runnable {
 
                     // Store the elevator's information in SchedulerStore
                     store.addElevator(elevatorID, receivePacket.getAddress(), receivePacket.getPort());
-                } else if (translatedMessage.startsWith("04")) { // Elevator Status Update message
+                } 
+                // else if (translatedMessage.startsWith("03")){ //Hard fault
+                //     //03HARD,[floor#]0
+                //     String[] parts = translatedMessage.substring(2, translatedMessage.length() - 1).split(",");
+                //     int elevatorID = Integer.parseInt(parts[0]);
+                //     String statusType = parts[1];
+
+                //     if ("HARD".equals(statusType)) {
+                //         int currentFloor = Integer.parseInt(parts[2]);
+                //         store.updateElevator(elevatorID, 2, currentFloor);
+                //         store.updateElevator(elevatorID, 3, 3); //3 = out of order
+                //     }
+                // }
+                else if (translatedMessage.startsWith("04")) { // Elevator Status Update message
                     // Correctly parsing the message by excluding the trailing 0 byte
                     String[] parts = translatedMessage.substring(2, translatedMessage.length() - 1).split(",");
                     if(parts.length >= 3) { // elevatorID, status, direction (for moving), current floor, destination floor
@@ -70,10 +83,12 @@ public class SchedulerReceiver implements Runnable {
                             store.updateElevator(elevatorID, 2, currentFloor);
                             store.updateElevator(elevatorID, 3, "UP".equals(direction) ? 1 : 2); // Assuming '1' for up and '2' for down
                             store.updateElevator(elevatorID, 4, destinationFloor);
-                        }
-
-                        System.out.println(store.getElevators());
+                        } else if ("Out".equals(statusType)) {
+                            int currentFloor = Integer.parseInt(parts[2]);
+                            store.updateElevator(elevatorID, 2, currentFloor);
+                            store.updateElevator(elevatorID, 3, 3); //3 = out of order
                     }
+                }
                 }
                 else
                 {
