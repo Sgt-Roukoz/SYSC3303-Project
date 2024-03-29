@@ -67,7 +67,16 @@ public class Floor implements Runnable{
             msg += ",DN,";
         }
         msg += split[3] + ",";
-        msg += "0";
+
+        if(split[4] == "0"){
+            msg += "0";
+        } else if (split[4] == "1") {
+            msg += "1";
+        } else{
+            msg += "2";
+        }
+
+
         byte[] byteMsg = HelperFunctions.generateMsg(msg);
 
         DatagramPacket receivePacket;

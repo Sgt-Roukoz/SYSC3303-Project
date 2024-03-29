@@ -41,7 +41,7 @@ public class SchedulerReceiver implements Runnable {
 
                         // Create the event; assuming current time is passed as a placeholder for the time parameter
                         String currentTime = "00:00"; // Placeholder, adjust as needed
-                        ElevatorEvent event = new ElevatorEvent(currentTime, sourceFloor, direction, destinationFloor);
+                        ElevatorEvent event = new ElevatorEvent(currentTime, sourceFloor, direction, destinationFloor, );
 
                         // Store the event
                         store.setFloorRequest(event);

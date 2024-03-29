@@ -15,15 +15,17 @@ public class ElevatorEvent implements Serializable { //convert to Record?
     private final int sourceFloor;
     private final ELEVATOR_BUTTON button;
     private final int destFloor;
+    private final int faultType;
 
     //later add value for specific elevator
 
-    public ElevatorEvent(String time, int floor, ELEVATOR_BUTTON button, int car_button)
+    public ElevatorEvent(String time, int floor, ELEVATOR_BUTTON button, int car_button, int fault)
     {
         this.time = time;
         this.sourceFloor = floor;
         this.button = button;
         this.destFloor = car_button;
+        this.faultType = fault;
     }
 
     public String toString(){
@@ -46,5 +48,9 @@ public class ElevatorEvent implements Serializable { //convert to Record?
 
     public int getDestFloor() {
         return destFloor;
+    }
+
+    public int getFaultType() {
+        return faultType;
     }
 }
