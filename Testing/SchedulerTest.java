@@ -41,7 +41,7 @@ class SchedulerTest {
     @Test
     void testReadFloorRequest() throws RemoteException {
 
-        ElevatorEvent elevatorEvent = new ElevatorEvent("14:05:15.0", 3, ELEVATOR_BUTTON.UP, 5);
+        ElevatorEvent elevatorEvent = new ElevatorEvent("14:05:15.0", 3, ELEVATOR_BUTTON.UP, 5, 0);
         store.setFloorRequest(elevatorEvent);
         scheduler.setReadFloorRequest();
         Assertions.assertEquals(scheduler.getFloorRequestToBeProcessed().toString(), elevatorEvent.toString());

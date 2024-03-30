@@ -60,7 +60,7 @@ class SchedulerReceiverTest {
         Assertions.assertEquals("ACK0105,UP,090", receiveString);
 
         //testing floor event exists
-        ElevatorEvent testEvent = new ElevatorEvent("00:00", 5,ELEVATOR_BUTTON.UP,9);
+        ElevatorEvent testEvent = new ElevatorEvent("00:00", 5,ELEVATOR_BUTTON.UP,9, 0);
         Assertions.assertEquals(testEvent.toString(), store.getFloorRequest().toString());
     }
 

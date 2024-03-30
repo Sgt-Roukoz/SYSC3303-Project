@@ -93,20 +93,23 @@ public class Scheduler implements Runnable {
     private void removeOutOfOrderElevators() throws RemoteException {
         for (Map.Entry<Integer, ArrayList<Serializable>> entry : store.getElevators().entrySet())
         {
-            if ((int)entry.getValue().get(3) == 4)
+            if ((int)entry.getValue().get(3) == 3)
             {
+                int destination = (int) entry.getValue().get(4);
                 sourceFloors.remove(entry.getKey()); //remove corresponding sourceFloors queue
+                srcErrorPairs.get(entry.getKey()).put(destination, 0);
+                //srcDestPairs.get(entry.getKey()).remove(destination);
                 for (Map.Entry<Integer, Integer> subEntry: srcDestPairs.get(entry.getKey()).entrySet()) //reassign unserviced requests
                 {
                     if (!destFloors.get(entry.getKey()).contains(subEntry.getValue())) // if the elevator has not reached the source floor of a request
                     {
-                        srcErrorPairs.get(entry.getKey()).get(subEntry.getKey());
                         findClosest(subEntry.getKey(), subEntry.getValue(), srcErrorPairs.get(entry.getKey()).get(subEntry.getKey())); //reassign request
                     }
                 }
                 destFloors.remove(entry.getKey()); //remove corresponding destination floors queue
                 srcDestPairs.remove(entry.getKey());
                 srcErrorPairs.remove(entry.getKey());
+                System.out.println("Scheduler removing Elevator " + entry.getKey() + " from scheduling");
                 store.removeElevator(entry.getKey()); // remove elevator from store
             }
         }
@@ -317,6 +320,7 @@ public class Scheduler implements Runnable {
         Map<Integer, ArrayList<Serializable>> elevators;
         try {
             elevators = store.getElevators();
+            System.out.println("Elevators remaining: " + elevators.size());
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -465,14 +469,14 @@ public class Scheduler implements Runnable {
         srcDestPairs.get(closestID).put(sourceFloor, destFloor);
         srcErrorPairs.get(closestID).put(sourceFloor, fault); //place holder for error value in floor request
 
-        if ((int) elevators.get(closestID).get(2) > floorRequestToBeProcessed.getSourceFloor()) { //determine last direction
+        if ((int) elevators.get(closestID).get(2) > sourceFloor) { //determine last direction
 
             if ( (((int) elevators.get(closestID).get(4) < sourceFloor && destFloor < sourceFloor )|| ((int)elevators.get(closestID).get(3) == 0 && (int) elevators.get(closestID).get(2)==1)))
             {
                 sendCommand(closestID, sourceFloor, fault);
             }
         }
-        else if ((int) elevators.get(closestID).get(2) < floorRequestToBeProcessed.getSourceFloor()) {
+        else if ((int) elevators.get(closestID).get(2) < sourceFloor) {
 
             if ( ((int) elevators.get(closestID).get(4) > sourceFloor && destFloor > sourceFloor) || ((int)elevators.get(closestID).get(3) == 0 && (int) elevators.get(closestID).get(2)==1))
             {

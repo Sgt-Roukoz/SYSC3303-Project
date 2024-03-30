@@ -40,7 +40,6 @@ public class Elevator implements Runnable {
     private int destinationFloor; //current destination floor
     protected boolean transientFault = false;
     protected boolean hardFault = false;
-
     /**
      * Constructs an Elevator object with a specified Scheduler and elevator ID.
     * The elevator is initialized on the ground floor with doors closed.
@@ -148,7 +147,7 @@ public class Elevator implements Runnable {
 
                     if (translatedMessage.equals("ACK" + message)) {
                         ackBool = true;
-                        System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
+                        //System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
                     }
                 } catch (SocketTimeoutException e) {
                     System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");
@@ -227,15 +226,17 @@ public class Elevator implements Runnable {
 
                 byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                System.out.println(elevatorId + " " + hardFault + " " + (abs(currentFloor - destinationFloor) == 1));
+
                 if (abs(currentFloor - destinationFloor) == 1 && hardFault) //simulating getting stuck between floors
                 {
-                    sendReceiveSocket.setSoTimeout(((int) TIME_PER_FLOOR));
-                    sendReceiveSocket.receive(receivePacket);
+                    System.out.println(elevatorId + " Hard fault occurring?");
                     System.out.println("ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
                     String message = "04" + elevatorId + ",Out," + currentFloor + "0";
                     packetSentGetAck(message);
-                    System.exit(1);
+                    break;
                 }
+
                 sendReceiveSocket.receive(receivePacket);
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
                 if (translatedMessage.startsWith("03")) {
@@ -257,9 +258,12 @@ public class Elevator implements Runnable {
             }
         }
 
-        sendReceiveSocket.setSoTimeout(0);
-        arrivedAtFloor();
-        System.out.println("Elevator " + elevatorId + " arrived at floor " + destinationFloor);
+        if (!hardFault)
+        {
+            sendReceiveSocket.setSoTimeout(0);
+            arrivedAtFloor();
+            System.out.println("Elevator " + elevatorId + " arrived at floor " + destinationFloor);
+        }
     }
 
     /**

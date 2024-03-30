@@ -39,9 +39,9 @@ public class SchedulerReceiver implements Runnable {
                 // Handle message based on type
                 if (translatedMessage.startsWith("01")) { // FloorEvent message
                     // Extract message details, assuming a format like "01srcFloor,Direction,destFloor".
-                    String[] messageParts = translatedMessage.substring(2, translatedMessage.length()).split(",");
-                    for(int i = 0; i< messageParts.length; i++){
-                        System.out.println(messageParts[i]);
+                    String[] messageParts = translatedMessage.substring(2).split(",");
+                    for (String messagePart : messageParts) {
+                        System.out.println(messagePart);
                     }
                     if(messageParts.length >= 3) {
                         int sourceFloor = Integer.parseInt(messageParts[0].trim());
@@ -65,19 +65,7 @@ public class SchedulerReceiver implements Runnable {
 
                     // Store the elevator's information in SchedulerStore
                     store.addElevator(elevatorID, receivePacket.getAddress(), receivePacket.getPort());
-                } 
-                // else if (translatedMessage.startsWith("03")){ //Hard fault
-                //     //03HARD,[floor#]0
-                //     String[] parts = translatedMessage.substring(2, translatedMessage.length() - 1).split(",");
-                //     int elevatorID = Integer.parseInt(parts[0]);
-                //     String statusType = parts[1];
-
-                //     if ("HARD".equals(statusType)) {
-                //         int currentFloor = Integer.parseInt(parts[2]);
-                //         store.updateElevator(elevatorID, 2, currentFloor);
-                //         store.updateElevator(elevatorID, 3, 3); //3 = out of order
-                //     }
-                // }
+                }
                 else if (translatedMessage.startsWith("04")) { // Elevator Status Update message
                     // Correctly parsing the message by excluding the trailing 0 byte
                     String[] parts = translatedMessage.substring(2, translatedMessage.length() - 1).split(",");
@@ -116,7 +104,7 @@ public class SchedulerReceiver implements Runnable {
                 DatagramPacket ackPacket = new DatagramPacket(ackData, ackData.length, returnAddress, returnPort);
                 serverSocket.send(ackPacket);
 
-                System.out.println("Sending: " + messageForAck);
+                System.out.println("Sending: " + ackMessage);
                 // Clear the buffer after handling the message
             }
         } catch (IOException ignored) {

@@ -34,7 +34,7 @@ class FloorTest {
     @Test
     void processInput(){
         //make scheduler receiver for testing
-        ElevatorEvent elevatorTest = new ElevatorEvent("00:00", 2, ELEVATOR_BUTTON.UP, 4);
+        ElevatorEvent elevatorTest = new ElevatorEvent("00:00", 2, ELEVATOR_BUTTON.UP, 4, 0);
         Floor testingFloor = new Floor();
         Thread receiveThred = new Thread(receiver);
         receiveThred.start();
