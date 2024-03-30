@@ -107,6 +107,7 @@ public class Elevator implements Runnable {
             if (translatedMessage.startsWith("03")) {
                 direction = translatedMessage.substring(2,4);
                 destinationFloor = Integer.parseInt(translatedMessage.substring(5,7));
+                checkFaultType(translatedMessage);
             }
             byte[] ackMessage = ("ACK" + translatedMessage).getBytes();
             DatagramPacket sendPack = new DatagramPacket(ackMessage, ackMessage.length, receivePacket.getAddress(), receivePacket.getPort());
@@ -289,14 +290,20 @@ public class Elevator implements Runnable {
 
     private void checkFaultType(String msg)
     {
-        int faultCode = Integer.parseInt(String.valueOf(msg.charAt(8)));
-
-        switch (faultCode){
+        int faultType = Integer.parseInt(String.valueOf(msg.charAt(8)));
+        switch (faultType)
+        {
             case 1:
+                hardFault = false;
                 transientFault = true;
                 break;
             case 2:
                 hardFault = true;
+                transientFault = false;
+                break;
+            default:
+                hardFault = false;
+                transientFault = false;
                 break;
         }
     }
