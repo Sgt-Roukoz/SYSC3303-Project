@@ -1,3 +1,11 @@
+/**
+ * Scheduler receiver class
+ * Acts as the communications receiver for the scheduler subsystem, saves the values and messages to a shared store
+ *
+ * @author Adham Elmahi
+ * @author Garrison Su
+ * @version 2024-03-29
+ */
 package Main;
 
 import java.io.IOException;

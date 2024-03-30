@@ -12,11 +12,12 @@ import java.util.*;
 
 /**
  * Scheduler class
- * Acts as a communication channel for the floor and elevator subsystems
+ * Acts as the coordinator for the Elevator subsystem
  *
  * @author Garrison Su
  * @author Marwan Zeid
- * @version 2024-02-24
+ * @author Masrur Husain
+ * @version 2024-03-29
  */
 
 public class Scheduler implements Runnable {
