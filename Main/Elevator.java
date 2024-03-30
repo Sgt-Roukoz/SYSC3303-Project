@@ -232,9 +232,9 @@ public class Elevator implements Runnable {
                     sendReceiveSocket.setSoTimeout(((int) TIME_PER_FLOOR));
                     sendReceiveSocket.receive(receivePacket);
                     System.out.println("ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
-                    hardFault = false;
                     String message = "04" + elevatorId + ",Out," + currentFloor + "0";
                     packetSentGetAck(message);
+                    System.exit(1);
                 }
                 sendReceiveSocket.receive(receivePacket);
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
