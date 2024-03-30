@@ -288,7 +288,10 @@ public class Elevator implements Runnable {
         }
     }
 
-
+    /**
+     * Checks the fault type of the message received, and sets up the trigger for that fault
+     * @param msg the message received
+     */
     private void checkFaultType(String msg)
     {
         int faultType = Integer.parseInt(String.valueOf(msg.charAt(8)));
