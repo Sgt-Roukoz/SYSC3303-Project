@@ -145,7 +145,7 @@ class Scheduler implements Runnable{
 -sourceFloors: Map<Integer, LinkedList<Integer>>
 -destFloors: Map<Integer, LinkedList<Integer>>
 -lastKnownDirection: Map<Integer, String>
--srcDestPairs: Map<Integer, Map<Integer, Integer>>
+-srcDestPairs: Map<Integer, Map<Integer, LinkedList<Integer>>>
 -srcErrorPairs: Map<Integer, Map<Integer, Integer>>
 
 +Scheduler(store: SchedulerStoreInt)
