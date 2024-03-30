@@ -7,7 +7,7 @@
  * @author Masrur Husain
  * @author Marwan Zeid
  * @author Garrison Su
- * @version 2024-03-17
+ * @version 2024-03-29
  */
 
 package Main;
@@ -232,9 +232,9 @@ public class Elevator implements Runnable {
                     sendReceiveSocket.setSoTimeout(((int) TIME_PER_FLOOR));
                     sendReceiveSocket.receive(receivePacket);
                     System.out.println("ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
-                    hardFault = false;
                     String message = "04" + elevatorId + ",Out," + currentFloor + "0";
                     packetSentGetAck(message);
+                    System.exit(1);
                 }
                 sendReceiveSocket.receive(receivePacket);
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
@@ -288,7 +288,10 @@ public class Elevator implements Runnable {
         }
     }
 
-
+    /**
+     * Checks the fault type of the message received, and sets up the trigger for that fault
+     * @param msg the message received
+     */
     private void checkFaultType(String msg)
     {
         int faultType = Integer.parseInt(String.valueOf(msg.charAt(8)));
