@@ -10,6 +10,7 @@ class SchedulerStore
 class Idle
 class Moving
 class LoadingUnloading
+class HelperFunctions
 enum ELEVATOR_BUTTON <<enumeration>>
 exception InterruptedException <<exception>>
 interface Runnable <<interface>>
@@ -31,16 +32,18 @@ toString(): String
 }
 
 interface SchedulerStoreInt{
-addElevator(elevId: Integer): void
-getElevators(): Map<Integer, ArrayList<Serializable>>
-updateElevator(elevID: Integer, itemToEdit: int, value: Serializable): void
-findClosest(floor: ElevatorEvent): int
-getFloorRequest(): ElevatorEvent
-setFloorRequest(event: ElevatorEvent): void
+addElevator(elevId: Integer, address: InetAddress, port: Integer) throws RemoteException: void
+getElevators() throws RemoteException: Map<Integer, ArrayList<Serializable>>
+updateElevator(elevID: Integer, itemToEdit: int, value: Serializable) throws RemoteException: void
+getFloorRequest() throws RemoteException: ElevatorEvent
+setFloorRequest(event: ElevatorEvent) throws RemoteException: void
+removeElevator(id: int) throws RemoteException: void
 }
 
 class SchedulerStore implements SchedulerStoreInt {
-
++floorRequests: ArrayDeque<ElevatorEvent>
++elevators: Map<Integer, ArrayList<Serializable>>
++SchedulerStore() throws RemoteException
 }
 
 class Idle implements ElevatorState {
@@ -109,27 +112,28 @@ class ElevatorEvent{
 -sourceFloor: int {readOnly}
 -destFloor: int {readOnly}
 -button: ELEVATOR_BUTTON {readOnly}
--car_button: int{readOnly}
+-faultType: int{readOnly}
 
-+ElevatorEvent(time: String, floor: int, button: ELEVATOR_BUTTON, car_button: int)
++ElevatorEvent(time: String, floor: int, button: ELEVATOR_BUTTON, car_button: int, fault: int)
 +toString(): String
 +getTime(): String
 +getSourceFloor(): int
 +getDestFloor(): int
 +getButton(): ELEVATOR_BUTTON
-+getCar_button(): int
++getFaultType(): int
 }
 
 class Floor extends Thread{
-upLampOn: boolean
-downLampOn: boolean
-elevatorArrived: boolean
--eventQueue:EventQueue {readOnly}
+-MAX_FLOORS: int {readOnly}
+-rand: Random {readOnly}
+-sendReceiveSocket: DatagramSocket {readOnly}
+-sendPacket: DatagramPacket
 
-+Floor(name: String, eventQueue: EventQueue)
++Floor()
 +processFile(file: File): void
 +processInput(input: String): void
 +run(): void
++{Static} main(args:String[]): void
 }
 
 class Scheduler implements Runnable{
@@ -170,6 +174,13 @@ class SchedulerReceiver implements Runnable{
 +SchedulerReceiver(store: SchedulerStoreInt)
 +run(): void
 +{Static} main(args:String[]): void
+}
+
+class HelperFunctions{
++{Static} generateMsg(stringMsg: String): byte[]
++{Static} translateMsg(msg: byte[], len: int): String
++{Static} validateData(msg: byte[], len: int): boolean
++{Static} printDataInfo(data: byte[], len: int): void
 }
 
 @enduml
