@@ -36,12 +36,14 @@ public class SchedulerReceiver implements Runnable {
                         int sourceFloor = Integer.parseInt(messageParts[0].trim());
                         String directionStr = messageParts[1].trim(); // "UP" or "DN"
                         int destinationFloor = Integer.parseInt(messageParts[2].trim());
+                        int faultType = Integer.parseInt(messageParts[3].trim());
+
 
                         ELEVATOR_BUTTON direction = "UP".equals(directionStr) ? ELEVATOR_BUTTON.UP : ELEVATOR_BUTTON.DOWN;
 
                         // Create the event; assuming current time is passed as a placeholder for the time parameter
                         String currentTime = "00:00"; // Placeholder, adjust as needed
-                        ElevatorEvent event = new ElevatorEvent(currentTime, sourceFloor, direction, destinationFloor, );
+                        ElevatorEvent event = new ElevatorEvent(currentTime, sourceFloor, direction, destinationFloor, faultType);
 
                         // Store the event
                         store.setFloorRequest(event);
