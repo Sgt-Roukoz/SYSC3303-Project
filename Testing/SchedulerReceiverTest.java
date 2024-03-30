@@ -53,11 +53,11 @@ class SchedulerReceiverTest {
      */
     @Test
     void testSendingFloorMessage() throws IOException {
-        DatagramPacket receivePacket = getReceivePacket("0105,UP,090");
+        DatagramPacket receivePacket = getReceivePacket("0105,UP,09,00");
 
         //testing acknowledgement
         String receiveString = new String(receivePacket.getData(), 0, receivePacket.getLength());
-        Assertions.assertEquals("ACK0105,UP,090", receiveString);
+        Assertions.assertEquals("ACK0105,UP,09,00", receiveString);
 
         //testing floor event exists
         ElevatorEvent testEvent = new ElevatorEvent("00:00", 5,ELEVATOR_BUTTON.UP,9, 0);

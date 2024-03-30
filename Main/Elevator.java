@@ -226,11 +226,9 @@ public class Elevator implements Runnable {
 
                 byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
-                System.out.println(elevatorId + " " + hardFault + " " + (abs(currentFloor - destinationFloor) == 1));
 
                 if (abs(currentFloor - destinationFloor) == 1 && hardFault) //simulating getting stuck between floors
                 {
-                    System.out.println(elevatorId + " Hard fault occurring?");
                     System.out.println("ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
                     String message = "04" + elevatorId + ",Out," + currentFloor + "0";
                     packetSentGetAck(message);

@@ -39,7 +39,7 @@ class FloorTest {
         Thread receiveThred = new Thread(receiver);
         receiveThred.start();
 
-        testingFloor.processInput("14:05:15.0 2 UP 4");
+        testingFloor.processInput("14:05:15.0 2 UP 4 0");
 
         Assertions.assertEquals(store.getFloorRequest().toString(), elevatorTest.toString());
 
