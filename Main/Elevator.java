@@ -240,6 +240,7 @@ public class Elevator implements Runnable {
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
                 if (translatedMessage.startsWith("03")) {
                     destinationFloor = Integer.parseInt(translatedMessage.substring(5,7));
+                    checkFaultType(translatedMessage);
                     byte[] ack = HelperFunctions.generateMsg("ACK"+ translatedMessage);
                     DatagramPacket tempack = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), receivePacket.getPort());
                     sendReceiveSocket.send(tempack);
