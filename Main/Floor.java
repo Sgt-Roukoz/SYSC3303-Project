@@ -68,14 +68,16 @@ public class Floor implements Runnable{
         }
         msg += split[3] + ",";
 
-        if(split[4] == "0"){
+
+        if(split[4].equals("0")){
             msg += "0";
-        } else if (split[4] == "1") {
+        } else if (split[4].equals("1")) {
             msg += "1";
         } else{
             msg += "2";
         }
 
+        System.out.println(msg);
 
         byte[] byteMsg = HelperFunctions.generateMsg(msg);
 
