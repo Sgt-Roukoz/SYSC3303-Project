@@ -54,7 +54,7 @@ class LoadingUnloading implements ElevatorState {
 
 class Elevator implements Runnable {
 -{static} TIME_PER_FLOOR: long {readOnly}
--{static} DOOR_OPERATION_TIME: long {readOnly}
+#{static} DOOR_OPERATION_TIME: long {readOnly}
 -{static} ACK_LOOP_WAIT_TIME: long {readOnly}
 -currentFloor: int
 -elevatorId: int {readOnly}
@@ -67,14 +67,16 @@ class Elevator implements Runnable {
 -MAX_ATTEMPTS: int {readOnly}
 -direction: String
 -destinationFloor: int
+#transientFault: boolean
+#hardFault: boolean
 
 +Elevator(elevatorId: int)
-+getElevatorId(): int
 +floorRequested(): void
 +arrivedAtFloor(): void
 +doorsClosed(): void
 +getCurrentFloor(): int
 +getDestinationFloor(): int
++getElevatorId(): int
 +setCurrentState(nextState: String): void
 -sendIExistMessage(): void
 #waitMessageScheduler(): void
@@ -82,8 +84,9 @@ class Elevator implements Runnable {
 #sendIdleStatusUpdate(): void
 #sendMovingStatusUpdate(): void
 +run(): void
-#checkForIncomingMessages(): void
 #moveToFloor(floor: int) throws InterruptedException : void
+#checkForIncomingMessages(): void
+-checkFaultType(msg: String): void
 #openDoors() throws InterruptedException: void
 #closeDoors() throws InterruptedException : void
 +setOpenDoors(): void
@@ -138,20 +141,22 @@ class Scheduler implements Runnable{
 -sourceFloors: Map<Integer, LinkedList<Integer>>
 -destFloors: Map<Integer, LinkedList<Integer>>
 -lastKnownDirection: Map<Integer, String>
+-srcDestPairs: Map<Integer, Map<Integer, Integer>>
+-srcErrorPairs: Map<Integer, Map<Integer, Integer>>
 
 +Scheduler(store: SchedulerStoreInt)
 +run():void
--readFloorRequest(): void
--checkArrivedAtAnyFloor(): void
+-removeOutOfOrderElevators() throws RemoteException : void
+-readFloorRequest() throws RemoteException: void
+-checkArrivedAtAnyFloor() throws RemoteException, InterruptedException: void
 -contains(list: LinkedList<Integer>, value: Integer): boolean
--createMessage(elevId: int, floor: int): void
--sendCommand(elevId: int, floor: int): void
+-createMessage(elevId: int, floor: int, fault: int) throws RemoteException: String
+-sendCommand(elevId: int, floor: int, fault: int): void
 -findNextClosest(floor: int, destfloors: LinkedList<Integer>, srcFloors: LinkedList<Integer>, direction: String): int
--sendToClosest(elevId: Integer, currentFloor: int): void
--findClosest(floor: ElevatorEvent): void
+-sendToClosest(elevId: Integer): void
+-findClosest(sourceFloor: int, destFloor: int, fault: int): void
 +setReadFloorRequest(): void
 +setProcessFloorRequest(): void
-+setSendElevatorRequest(): void
 +getFloorRequestToBeProcessed(): ElevatorEvent
 +getProcessedRequest(): ElevatorEvent
 +{Static} main(args:String[]): void
