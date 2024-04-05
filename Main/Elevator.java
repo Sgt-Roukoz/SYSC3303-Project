@@ -40,6 +40,8 @@ public class Elevator implements Runnable {
     private int destinationFloor; //current destination floor
     protected boolean transientFault = false;
     protected boolean hardFault = false;
+    private static final int MAX_PASSENGERS = 5;
+    private Map<Integer, Integer> currentPassengers;
     /**
      * Constructs an Elevator object with a specified Scheduler and elevator ID.
     * The elevator is initialized on the ground floor with doors closed.
@@ -54,6 +56,7 @@ public class Elevator implements Runnable {
         states.put("Idle", new Idle());
         states.put("LoadingUnloading", new LoadingUnloading());
         states.put("Moving", new Moving());
+        currentPassengers = new HashMap<>();
          
         try{
             sendReceiveSocket = new DatagramSocket();
@@ -330,6 +333,10 @@ public class Elevator implements Runnable {
         System.out.println("Elevator " + elevatorId + " doors closing.");
         doorsOpen = false;
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
+    }
+
+    public static int getMaxPassengers() {
+        return MAX_PASSENGERS;
     }
 
     //Setters and getters for Testing purposes
