@@ -39,7 +39,7 @@ public class SchedulerStore extends UnicastRemoteObject implements SchedulerStor
     public synchronized void addElevator (Integer elevID, InetAddress address, Integer port)
     {
         System.out.println("Adding elevator");
-        elevators.put(elevID, new ArrayList<>(Arrays.asList(address, port, 1, 0, 0)));
+        elevators.put(elevID, new ArrayList<>(Arrays.asList(address, port, 1, 0, 0, 0)));
         System.out.println(elevators);
     }
 
@@ -91,4 +91,19 @@ public class SchedulerStore extends UnicastRemoteObject implements SchedulerStor
     {
         elevators.remove(id);
     }
+
+    // In SchedulerStore.java
+    public synchronized Map<Integer, Integer> getPassengerCounts() {
+        Map<Integer, Integer> passengerCounts = new HashMap<>();
+        for(Map.Entry<Integer, ArrayList<Serializable>> entry : elevators.entrySet()) {
+            int elevatorId = entry.getKey();
+            ArrayList<Serializable> elevatorInfo = entry.getValue();
+            // passenger count is at index 5 in the elevatorInfo ArrayList
+            int passengers = (int) elevatorInfo.get(5);
+            passengerCounts.put(elevatorId, passengers);
+        }
+        return passengerCounts;
+    }
+
+
 }

@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  */
 
 public class Scheduler implements Runnable {
-    private static final int MAX_PASSENGERS = 5;
+
     private DatagramSocket sendReceiveSocket;
     private ElevatorEvent floorRequestToBeProcessed;
     private ElevatorEvent processedRequest;
@@ -34,21 +34,25 @@ public class Scheduler implements Runnable {
     private Map<Integer, Map<Integer, LinkedList<Integer>>> srcDestPairs;
     private  Map<Integer, Map<Integer, Integer>> srcErrorPairs;
 
-    private Map<Integer, Integer> currentPassengers;
+    private Map<Integer, Integer> currentPassengerCounts;
+
+    int maxPassengers = Elevator.getMaxPassengers();
+
 
 
     /**
      * Scheduler class constructor
      *
      */
-    public Scheduler(SchedulerStoreInt store) {
+    public Scheduler(SchedulerStoreInt store) throws RemoteException {
 
         sourceFloors = new HashMap<>();
         destFloors = new HashMap<>();
         lastKnownDirection = new HashMap<>();
         srcDestPairs = new HashMap<>();
         srcErrorPairs = new HashMap<>();
-        currentPassengers = new HashMap<>();
+        currentPassengerCounts = store.getPassengerCounts();
+
 
         try {
             this.store =  store;
@@ -56,10 +60,10 @@ public class Scheduler implements Runnable {
             for(Integer i : store.getElevators().keySet()){
                 System.out.println("Elevator Found");
                 sourceFloors.put(i, new LinkedList<>());
-                currentPassengers.put(i, 0);
                 destFloors.put(i, new LinkedList<>());
                 srcDestPairs.put(i, new HashMap<>());
                 srcErrorPairs.put(i, new HashMap<>());
+
                 lastKnownDirection.put(i, "IDLE");
             }
         } catch (SocketException | RemoteException se) {
@@ -146,9 +150,9 @@ public class Scheduler implements Runnable {
                     System.out.println("Elevator " + key + " at floor " + sourceElevs.get(key).get(2));
                     System.out.println("Destinations contains: " + srcDestPairs.get(key));
                     System.out.println("Adding the following: " + srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)));
-                    int passengers = currentPassengers.get(key);
-                    if (passengers < MAX_PASSENGERS) {
-                        currentPassengers.put(key, passengers + 1);
+                    int passengers = currentPassengerCounts.get(key);
+                    if (passengers < maxPassengers ) {
+                        currentPassengerCounts.put(key, passengers + 1);
                         // Send the elevator to the closest floor as it has space and just loaded a passenger
                         sendToClosest(key);
                     } else {
@@ -165,7 +169,7 @@ public class Scheduler implements Runnable {
                             System.out.println("No available elevators to reassign the pickup request at floor " + sourceElevs.get(key).get(2));
                         }
 
-                        // Do not forget to remove the source floor from the current elevator's queue since it's full
+
                         sourceFloors.get(key).remove((Integer)sourceElevs.get(key).get(2));
                     }
                     destFloors.get(key).addAll(srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)));
@@ -178,8 +182,8 @@ public class Scheduler implements Runnable {
                 {
                     System.out.println("Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
                     // Decrease passenger count when elevator arrives at destination floor
-                    int passengers = currentPassengers.get(key);
-                    currentPassengers.put(key, Math.max(0, passengers - 1));
+                    int passengers = currentPassengerCounts.get(key);
+                    currentPassengerCounts.put(key, Math.max(0, passengers - 1));
                     destFloors.get(key).removeFirstOccurrence(sourceElevs.get(key).get(2));
                     Thread.sleep(200);
                     sendToClosest(key);
@@ -200,16 +204,19 @@ public class Scheduler implements Runnable {
      */
     private Integer findNewElevatorForReassignment(Integer currentElevatorID, Integer sourceFloor) throws RemoteException {
         Map<Integer, ArrayList<Serializable>> elevators = store.getElevators();
+        Map<Integer, Integer> currentPassengerCounts = store.getPassengerCounts(); // Make sure you have this line to get the passenger counts
+
         Integer selectedElevatorID = null;
         int minDistance = Integer.MAX_VALUE;
 
         for (Map.Entry<Integer, ArrayList<Serializable>> entry : elevators.entrySet()) {
             if (!entry.getKey().equals(currentElevatorID)) {
                 int currentFloor = (int) entry.getValue().get(2); // current floor
-                int passengerCount = (int) entry.getValue().get(5); // current passenger count
+                int passengerCount = currentPassengerCounts.get(entry.getKey()); // Get the passenger count using the entry's key (elevator ID)
+
                 int distanceToSourceFloor = Math.abs(currentFloor - sourceFloor);
 
-                if (passengerCount < MAX_PASSENGERS && distanceToSourceFloor < minDistance) {
+                if (passengerCount < maxPassengers && distanceToSourceFloor < minDistance) {
                     minDistance = distanceToSourceFloor;
                     selectedElevatorID = entry.getKey();
                 }
@@ -218,6 +225,7 @@ public class Scheduler implements Runnable {
 
         return selectedElevatorID;
     }
+
 
 
     /**
@@ -372,9 +380,9 @@ public class Scheduler implements Runnable {
                 // Check if the elevator is at a source floor to pick up passengers
                 floorToGo = sourceFloors.get(elevID).getFirst();
                 isAtSourceFloor = true;
-                passengers = currentPassengers.get(elevID);
+                passengers = currentPassengerCounts.get(elevID);
                 // If the elevator is full, do not add more passengers, instead find the next destination
-                if (passengers >= MAX_PASSENGERS) {
+                if (passengers >= maxPassengers ) {
                     isAtSourceFloor = false; // Set to false since we can't pick up more passengers
                     if (!destFloors.get(elevID).isEmpty()) {
                         // Elevator full, move to next destination floor
