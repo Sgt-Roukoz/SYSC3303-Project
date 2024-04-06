@@ -18,6 +18,12 @@ import javax.swing.table.DefaultTableCellRenderer;
 public class ElevatorInspector extends JFrame {
     private static ElevatorInspector instance;
     private JTable elevatorTable;
+    GridBagLayout layout;
+    GridBagConstraints gbc;
+    JTextArea elev1TextArea;
+    JTextArea elev2TextArea;
+    JTextArea elev3TextArea;
+    JTextArea elev4TextArea;
 //    public void moveElevatorGUI(int elevatorId, int floor) {
 //        DefaultTableModel model = (DefaultTableModel) elevatorTable.getModel();
 //        for (int i = 0; i < model.getRowCount(); i++) {
@@ -53,18 +59,6 @@ public class ElevatorInspector extends JFrame {
             default-> System.out.println("NOT PRINTING TO GUI");
         }
     }
-
-    GridBagLayout layout;
-    GridBagConstraints gbc;
-    JTextArea elev1TextArea;
-    JTextArea elev2TextArea;
-    JTextArea elev3TextArea;
-    JTextArea elev4TextArea;
-
-    private JScrollPane elev1ScrollPane;
-    private JScrollPane elev2ScrollPane;
-    private JScrollPane elev3ScrollPane;
-    private JScrollPane elev4ScrollPane;
 
     public ElevatorInspector()
     {
