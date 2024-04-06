@@ -15,10 +15,13 @@ import java.util.*;
 public class SchedulerStore extends UnicastRemoteObject implements SchedulerStoreInt {
     private ArrayDeque<ElevatorEvent> floorRequests;
     private Map<Integer, ArrayList<Serializable>> elevators;
-    //Map with elevator ID as keys, and arraylist containing: 0 as address, 1 as port, 2 as current floor, 3 as moving direction and 4 as destination
+    //Map with elevator ID as keys, and arraylist containing: 0 as address, 1 as port, 2 as current floor, 3 as moving direction and 4 as destination, 5 is the current passenger count
     //current floor default is 1
     // moving direction is 0 if Idle, 1 if UP and 2 if DOWN
     // destination is 0 if none (idle) and some floor number if not.
+
+    private ArrayDeque<String> messageLog;
+
 
     /**
      * Constructor for SchedulerStore
@@ -28,6 +31,7 @@ public class SchedulerStore extends UnicastRemoteObject implements SchedulerStor
         super();
         floorRequests = new ArrayDeque<>();
         elevators = new HashMap<>();
+        messageLog = new ArrayDeque<>();
     }
 
     /**
@@ -90,6 +94,34 @@ public class SchedulerStore extends UnicastRemoteObject implements SchedulerStor
     public synchronized void removeElevator(int id)
     {
         elevators.remove(id);
+    }
+
+    /**
+     * Add a message to the message log
+     * @param message Message to be added
+     */
+    public synchronized void addLog(String message)
+    {
+        messageLog.add(message);
+        notifyAll();
+    }
+
+    /**
+     * Get a message form the message log
+     * @return Returns a message as String
+     */
+    public synchronized String receiveLog()
+    {
+        while (messageLog.isEmpty())
+        {
+            try{
+                wait();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        return messageLog.remove();
     }
 
     // In SchedulerStore.java

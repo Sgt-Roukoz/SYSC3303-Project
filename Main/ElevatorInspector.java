@@ -15,12 +15,15 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.util.EventObject;
 import javax.swing.table.DefaultTableCellRenderer;
 
-public class ElevatorInspector extends JFrame {
+public class ElevatorInspector extends JFrame implements Runnable {
     private static ElevatorInspector instance;
     private JTable elevatorTable;
+    private SchedulerStoreInt store;
     GridBagLayout layout;
     GridBagConstraints gbc;
     JTextArea elev1TextArea;
@@ -36,38 +39,12 @@ public class ElevatorInspector extends JFrame {
 //        model.setValueAt("TESTING", 22 - floor, elevatorId); //floor 1 = index
 //    }
 
-    public void moveElevatorGUI(int elevatorId, int floor, int error) {
-        Color color = switch (error) {
-            case 0 -> Color.GREEN;
-            case 1 -> Color.YELLOW;
-            case 2 -> Color.RED;
-            default -> Color.CYAN; //Nothing used for testing
-        }; // Nothing for error checking
-        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
-        elevatorTable.repaint();
-    }
-
-    public static ElevatorInspector getInstance() {
-        if (instance == null) {
-            instance = new ElevatorInspector();
-        }
-        return instance;
-    }
-    public void updateElevatorLog(int elevatorId, String message) {
-        switch (elevatorId) {
-            case 1-> elev1TextArea.append(message + "\n");
-            case 2-> elev2TextArea.append(message + "\n");
-            case 3-> elev3TextArea.append(message + "\n");
-            case 4-> elev4TextArea.append(message + "\n");
-            default-> System.out.println("NOT PRINTING TO GUI");
-        }
-    }
-
-    public ElevatorInspector()
+    public ElevatorInspector(SchedulerStoreInt store)
     {
         super("Elevator Inspector");
         this.layout = new GridBagLayout();
         this.gbc = new GridBagConstraints();
+        this.store = store;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setSize(1200, 900);
         setResizable(false);
@@ -162,6 +139,51 @@ public class ElevatorInspector extends JFrame {
         this.repaint();
     }
 
+    @Override
+    public void run() {
+        while (!Thread.interrupted())
+        {
+            getMessages();
+        }
+    }
+
+    private void getMessages()
+    {
+        try{
+            String message = store.receiveLog();
+        } catch (RemoteException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public void moveElevatorGUI(int elevatorId, int floor, int error) {
+        Color color = switch (error) {
+            case 0 -> Color.GREEN;
+            case 1 -> Color.YELLOW;
+            case 2 -> Color.RED;
+            default -> Color.CYAN; //Nothing used for testing
+        }; // Nothing for error checking
+        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
+        elevatorTable.repaint();
+    }
+
+    public static ElevatorInspector getInstance(SchedulerStoreInt store) {
+        if (instance == null) {
+            instance = new ElevatorInspector(store);
+        }
+        return instance;
+    }
+
+    public void updateElevatorLog(int elevatorId, String message) {
+        switch (elevatorId) {
+            case 1-> elev1TextArea.append(message + "\n");
+            case 2-> elev2TextArea.append(message + "\n");
+            case 3-> elev3TextArea.append(message + "\n");
+            case 4-> elev4TextArea.append(message + "\n");
+            default-> System.out.println("NOT PRINTING TO GUI");
+        }
+    }
+
     public void addObject(Component component, Container parentContainer, int gridx, int gridy, int gridwidth, int gridheight, double weightx, double weighty){
 
         gbc.gridx = gridx;
@@ -177,10 +199,22 @@ public class ElevatorInspector extends JFrame {
     }
 
     public static void main(String[] args) {
+        try {
+            SchedulerStoreInt store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
+
+            ElevatorInspector.getInstance(store).setVisible(true);
+            Scheduler scheduler = new Scheduler(store);
+
+            Thread schedulerThread = new Thread(scheduler);
+            schedulerThread.start();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 //        new ElevatorInspector();
-        ElevatorInspector.getInstance().setVisible(true);
+
 
     }
+
 }
 
 class SplitTableCellRenderer implements TableCellRenderer {

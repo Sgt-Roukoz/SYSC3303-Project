@@ -16,4 +16,6 @@ public interface SchedulerStoreInt extends Remote {
     void setFloorRequest(ElevatorEvent event) throws RemoteException;
     void removeElevator(int id) throws RemoteException;
     Map<Integer, Integer> getPassengerCounts() throws RemoteException;
+    void addLog(String message) throws RemoteException;
+    String receiveLog() throws RemoteException;
 }

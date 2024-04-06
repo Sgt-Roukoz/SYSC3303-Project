@@ -64,8 +64,8 @@ public class Elevator implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Activated!");
-        ElevatorInspector.getInstance().moveElevatorGUI(elevatorId,1,0);
+        //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Activated!");
+        //ElevatorInspector.getInstance().moveElevatorGUI(elevatorId,1,0);
 
     }
 
@@ -227,7 +227,7 @@ public class Elevator implements Runnable {
     protected void moveToFloor() throws InterruptedException, IOException {
         sendReceiveSocket.setSoTimeout((int) TIME_PER_FLOOR);
 //        System.out.println("Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
-        ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
+        //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
 
         while (currentFloor != destinationFloor){
             try {
@@ -238,10 +238,10 @@ public class Elevator implements Runnable {
                 if (abs(currentFloor - destinationFloor) == 1 && hardFault) //simulating getting stuck between floors
                 {
 //                    System.out.println("ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
-                    ElevatorInspector.getInstance().updateElevatorLog(getElevatorId(), "ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
+                    //ElevatorInspector.getInstance().updateElevatorLog(getElevatorId(), "ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
                     String message = "04" + elevatorId + ",Out," + currentFloor + "0";
                     packetSentGetAck(message);
-                    ElevatorInspector.getInstance().moveElevatorGUI(elevatorId, currentFloor, 2 ); //Change color of elevator
+                    //ElevatorInspector.getInstance().moveElevatorGUI(elevatorId, currentFloor, 2 ); //Change color of elevator
                     break;
                 }
 
@@ -254,7 +254,7 @@ public class Elevator implements Runnable {
                     DatagramPacket tempack = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), receivePacket.getPort());
                     sendReceiveSocket.send(tempack);
 //                    System.out.println("Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
-                    ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
+                    //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
 
                 }
             } catch (SocketTimeoutException e) {
@@ -265,8 +265,8 @@ public class Elevator implements Runnable {
                 }
                 packetSentGetAck("04" + elevatorId + ",Moving," + direction + "," + currentFloor + "," + destinationFloor + "0");
 //                System.out.println("Elevator " + elevatorId + " is now at floor " + currentFloor);
-                ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + " is now at floor " + currentFloor);
-                ElevatorInspector.getInstance().moveElevatorGUI(elevatorId, currentFloor, 0);
+                //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + " is now at floor " + currentFloor);
+                //ElevatorInspector.getInstance().moveElevatorGUI(elevatorId, currentFloor, 0);
             }
         }
 
@@ -275,7 +275,7 @@ public class Elevator implements Runnable {
             sendReceiveSocket.setSoTimeout(0);
             arrivedAtFloor();
 //            System.out.println("Elevator " + elevatorId + " arrived at floor " + destinationFloor);
-            ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Arrived at floor " + destinationFloor);
+            //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Arrived at floor " + destinationFloor);
 
         }
     }
@@ -335,7 +335,7 @@ public class Elevator implements Runnable {
      */
     protected void openDoors() throws InterruptedException {
 //        System.out.println("Elevator " + elevatorId + " doors opening.");
-        ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + " doors opening.");
+        //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + " doors opening.");
         doorsOpen = true;
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors opening
     }
@@ -345,7 +345,7 @@ public class Elevator implements Runnable {
      */
     protected void closeDoors() throws InterruptedException {
 //        System.out.println("Elevator " + elevatorId + " doors closing.");
-        ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + " doors closing.");
+        //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + " doors closing.");
         doorsOpen = false;
         Thread.sleep(DOOR_OPERATION_TIME / 2); // Simulate doors closing
     }
