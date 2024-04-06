@@ -11,8 +11,11 @@ package Main;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.util.EventObject;
 import javax.swing.table.DefaultTableCellRenderer;
 
 public class ElevatorInspector extends JFrame {
@@ -103,7 +106,7 @@ public class ElevatorInspector extends JFrame {
 
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 0);
         for (int i = 22; i >= 1; i--) {
-            model.addRow(new Object[]{i, "", "", "", ""});
+            model.addRow(new Object[]{null, "", "", "", ""});
         }
         JTable elevatorTable = new JTable(model);
         this.elevatorTable = elevatorTable;
@@ -127,10 +130,11 @@ public class ElevatorInspector extends JFrame {
         JPanel testPanel2 = new JPanel();
 
 
-        DefaultTableCellRenderer render1 = new DefaultTableCellRenderer();
+        /*DefaultTableCellRenderer render1 = new DefaultTableCellRenderer();
         render1.setBackground(Color.lightGray);
-        elevatorTable.getColumnModel().getColumn(0).setCellRenderer(render1);
+        elevatorTable.getColumnModel().getColumn(0).setCellRenderer(render1);*/
 
+        elevatorTable.getColumnModel().getColumn(0).setCellRenderer(new SplitTableCellRenderer());
 
         testPanel.setLayout(new GridLayout(4,1));
         testPanel.add(elev1TextArea);
@@ -147,8 +151,15 @@ public class ElevatorInspector extends JFrame {
         addObject(testPanel, this, 1,0,1,1, 0.4, 0.4);
         addObject(testPanel2, this, 2,0,1,1, 0.3, 0.4);
 
-        System.out.println(elev2TextArea.getWidth());
+        //System.out.println(elev2TextArea.getWidth());
         setVisible(true);
+        for (int i = 0; i < 22; i++) {
+            elevatorTable.getColumnModel().getColumn(0).getCellRenderer().getTableCellRendererComponent(elevatorTable, "test", false, false, i, 0);
+            CellPanel panel = (CellPanel) elevatorTable.getValueAt(i, 0);
+            panel.setFloorNumber(Integer.toString(i+1));
+            System.out.println(panel.getFloorNumberText());
+        }
+        this.repaint();
     }
 
     public void addObject(Component component, Container parentContainer, int gridx, int gridy, int gridwidth, int gridheight, double weightx, double weighty){
@@ -165,11 +176,89 @@ public class ElevatorInspector extends JFrame {
         parentContainer.add(component, gbc);
     }
 
-    public static void main(String[] args)
-    {
+    public static void main(String[] args) {
 //        new ElevatorInspector();
-            ElevatorInspector.getInstance().setVisible(true);
+        ElevatorInspector.getInstance().setVisible(true);
 
     }
+}
 
+class SplitTableCellRenderer implements TableCellRenderer {
+
+    CellPanel rendererPanel;
+
+    public SplitTableCellRenderer()
+    {
+        super();
+        rendererPanel = new CellPanel();
+    }
+    @Override
+    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+        if(table.getValueAt(row, column) == null) {
+            CellPanel panel = new CellPanel();
+            panel.setOpaque(true);
+            panel.requestFocusInWindow();
+            table.setValueAt(panel, row, column);
+            return panel;
+        }
+        else return (CellPanel) table.getValueAt(row, column);
+    }
+}
+
+class CellPanel extends JPanel {
+
+    JPanel upLamp;
+    JPanel downLamp;
+    JPanel floorNumber;
+    JTextArea floorNumberText;
+
+    public CellPanel() {
+        this.setLayout(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.BOTH;
+        floorNumber = new JPanel();
+        floorNumber.setOpaque(true);
+        floorNumber.setBackground(Color.white);
+        gbc.gridwidth = 1;
+        gbc.gridheight = 2;
+        gbc.weighty = 1.0;
+        this.add(floorNumber, gbc);
+        floorNumberText = new JTextArea();
+        floorNumber.add(floorNumberText);
+        upLamp = new JPanel();
+        upLamp.setOpaque(true);
+        upLamp.setBackground(Color.white);
+        gbc.gridheight = 1;
+        gbc.weighty = 1.0;
+        gbc.gridwidth = GridBagConstraints.REMAINDER;
+        this.add(upLamp, gbc);
+        downLamp = new JPanel();
+        downLamp.setOpaque(true);
+        downLamp.setBackground(Color.white);
+        this.add(downLamp, gbc);
+    }
+
+    public void upLampOn() {
+        upLamp.setBackground(Color.yellow);
+    }
+
+    public void upLampOff() {
+        upLamp.setBackground(Color.white);
+    }
+
+    public void downLampOn() {
+        upLamp.setBackground(Color.yellow);
+    }
+
+    public void downLampOff() {
+        upLamp.setBackground(Color.white);
+    }
+
+    public void setFloorNumber(String text) {
+        floorNumberText.setText(text);
+    }
+
+    public String getFloorNumberText() {
+        return floorNumberText.getText();
+    }
 }
