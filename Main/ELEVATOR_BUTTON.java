@@ -11,5 +11,3 @@ public enum ELEVATOR_BUTTON {
     START_MOVE, // Indicates the elevator is starting to move
     ARRIVAL     // Indicates the elevator has arrived at a floor
 }
-
-

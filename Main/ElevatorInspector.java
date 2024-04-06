@@ -1,3 +1,11 @@
+/**
+ * Represent the GUI interface for the elevator subsystem
+ * @author Marwan Zeid
+ * @author Garrison Su
+ * @version 2024-04-06
+ */
+
+
 package Main;
 
 import javax.swing.*;
@@ -5,8 +13,46 @@ import javax.swing.border.Border;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import javax.swing.table.DefaultTableCellRenderer;
 
 public class ElevatorInspector extends JFrame {
+    private static ElevatorInspector instance;
+    private JTable elevatorTable;
+//    public void moveElevatorGUI(int elevatorId, int floor) {
+//        DefaultTableModel model = (DefaultTableModel) elevatorTable.getModel();
+//        for (int i = 0; i < model.getRowCount(); i++) {
+//            model.setValueAt("", i, elevatorId);
+//
+//        }
+//        model.setValueAt("TESTING", 22 - floor, elevatorId); //floor 1 = index
+//    }
+
+    public void moveElevatorGUI(int elevatorId, int floor, int error) {
+        Color color = switch (error) {
+            case 0 -> Color.GREEN;
+            case 1 -> Color.YELLOW;
+            case 2 -> Color.RED;
+            default -> Color.CYAN; //Nothing used for testing
+        }; // Nothing for error checking
+        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
+        elevatorTable.repaint();
+    }
+
+    public static ElevatorInspector getInstance() {
+        if (instance == null) {
+            instance = new ElevatorInspector();
+        }
+        return instance;
+    }
+    public void updateElevatorLog(int elevatorId, String message) {
+        switch (elevatorId) {
+            case 1-> elev1TextArea.append(message + "\n");
+            case 2-> elev2TextArea.append(message + "\n");
+            case 3-> elev3TextArea.append(message + "\n");
+            case 4-> elev4TextArea.append(message + "\n");
+            default-> System.out.println("NOT PRINTING TO GUI");
+        }
+    }
 
     GridBagLayout layout;
     GridBagConstraints gbc;
@@ -14,6 +60,11 @@ public class ElevatorInspector extends JFrame {
     JTextArea elev2TextArea;
     JTextArea elev3TextArea;
     JTextArea elev4TextArea;
+
+    private JScrollPane elev1ScrollPane;
+    private JScrollPane elev2ScrollPane;
+    private JScrollPane elev3ScrollPane;
+    private JScrollPane elev4ScrollPane;
 
     public ElevatorInspector()
     {
@@ -54,7 +105,16 @@ public class ElevatorInspector extends JFrame {
         elev4TextArea.setWrapStyleWord(true);
 
 
-        JTable elevatorTable = new JTable(new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 22));
+//        JTable elevatorTable = new JTable(new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 22));
+
+        DefaultTableModel model = new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 0);
+        for (int i = 22; i >= 1; i--) {
+            model.addRow(new Object[]{i, "", "", "", ""});
+        }
+        JTable elevatorTable = new JTable(model);
+        this.elevatorTable = elevatorTable;
+
+
         elevatorTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         JScrollPane scrollPane = new JScrollPane(elevatorTable);
@@ -71,10 +131,13 @@ public class ElevatorInspector extends JFrame {
         gbc.fill = GridBagConstraints.BOTH;
         JPanel testPanel = new JPanel();
         JPanel testPanel2 = new JPanel();
-//        DefaultTableCellRenderer rendar1 = new DefaultTableCellRenderer();
-//        rendar1.setBackground(Color.red);
-//
-//        elevatorTable.getColumnModel().getColumn(0).setCellRenderer(rendar1);
+
+
+        DefaultTableCellRenderer render1 = new DefaultTableCellRenderer();
+        render1.setBackground(Color.lightGray);
+        elevatorTable.getColumnModel().getColumn(0).setCellRenderer(render1);
+
+
         testPanel.setLayout(new GridLayout(4,1));
         testPanel.add(elev1TextArea);
         testPanel.add(elev2TextArea);
@@ -110,7 +173,9 @@ public class ElevatorInspector extends JFrame {
 
     public static void main(String[] args)
     {
-        new ElevatorInspector();
+//        new ElevatorInspector();
+            ElevatorInspector.getInstance().setVisible(true);
+
     }
 
 }
