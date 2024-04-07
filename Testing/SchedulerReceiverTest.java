@@ -42,22 +42,17 @@ class SchedulerReceiverTest {
         Naming.rebind("store", store);
     }
 
-//    @AfterEach
-//    void cleanUp() throws MalformedURLException, NotBoundException, RemoteException {
-//        Naming.unbind("store");
-//    }
-
     /**
      * Tests storing floor event message
      * @throws IOException
      */
     @Test
     void testSendingFloorMessage() throws IOException {
-        DatagramPacket receivePacket = getReceivePacket("0105,UP,09,00");
+        DatagramPacket receivePacket = getReceivePacket("0105,UP,09,0,00");
 
         //testing acknowledgement
         String receiveString = new String(receivePacket.getData(), 0, receivePacket.getLength());
-        Assertions.assertEquals("ACK0105,UP,09,00", receiveString);
+        Assertions.assertEquals("ACK0105,UP,09,0,00", receiveString);
 
         //testing floor event exists
         ElevatorEvent testEvent = new ElevatorEvent("00:00", 5,ELEVATOR_BUTTON.UP,9, 0, false);
