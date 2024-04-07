@@ -8,13 +8,13 @@ class Idle implements ElevatorState {
     public void entry(Elevator context) {
         context.checkForIncomingMessages();
         context.sendIdleStatusUpdate();
-        System.out.println("Elevator " + context.getElevatorId() + " is Idle");
+        context.sendLog("Elevator-" + context.getElevatorId() + ": is Idle");
         context.waitMessageScheduler();
     }
 
     @Override
     public void floorRequest(Elevator context) {
-        System.out.println("Floor Requested...Elevator is moving.");
+        context.sendLog("Elevator-" + context.getElevatorId() + ": Floor Requested...Elevator is moving.");
         if (context.getCurrentFloor() == context.getDestinationFloor()) {
             context.setCurrentState("LoadingUnloading");
         } else {

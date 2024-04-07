@@ -24,19 +24,26 @@ public class CustomCellRenderer extends DefaultTableCellRenderer {
         Component cellBox = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
         //COMMENT THIS IF STATEMENT IF IT DOESNT WORK
-        if (column == specialColumn && (color == Color.red || color == Color.yellow)){
-            if (color == Color.red){
-                cellBox.setBackground(Color.red);
-            } else{
-                cellBox.setBackground(Color.yellow);
-            }
-            return cellBox;
+        //if (column == specialColumn && (color == Color.red || color == Color.yellow)){
+        if (((String) value).isEmpty()) {
+            cellBox.setBackground(Color.white);
+            cellBox.setForeground(Color.white);
         }
-        if (row == specialRow && column == specialColumn) { //Cell only
-                cellBox.setBackground(color);
-        } else {
-            cellBox.setBackground(Color.WHITE);
-            System.out.println("Something went wrong in GUI coloring");
+        else if (((String) value).equals("-")){
+            cellBox.setBackground(Color.yellow);
+            cellBox.setForeground(Color.yellow);
+        }
+        else if (((String) value).equals("*")){
+            cellBox.setBackground(Color.red);
+            cellBox.setForeground(Color.red);
+        }
+        else if (((String) value).equals("O")){
+            cellBox.setBackground(Color.blue);
+            cellBox.setForeground(Color.blue);
+        }
+        else if (((String) value).equals("A")){
+            cellBox.setBackground(Color.green);
+            cellBox.setForeground(Color.green);
         }
         return cellBox;
     }

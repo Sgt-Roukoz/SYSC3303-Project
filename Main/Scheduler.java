@@ -187,14 +187,14 @@ public class Scheduler implements Runnable {
                     //destFloors.get(key).addAll(srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)));
                     sourceFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
                     srcErrorPairs.get(key).remove(sourceElevs.get(key).get(2)); //remove the error pair
-                    Thread.sleep(200);
+                    Thread.sleep(10);
                     sendToClosest(key);
                 } else if (!destFloors.get(key).isEmpty() && contains(destFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a destination floor?
                 {
                     System.out.println("Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
 
                     doDestinations(sourceElevs, key, currFloor);
-                    Thread.sleep(200);
+                    Thread.sleep(10);
                     sendToClosest(key);
                 }
             }

@@ -22,6 +22,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.EventObject;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.text.DefaultCaret;
 import java.lang.Integer;
 import java.lang.String;
 import java.util.Map;
@@ -107,7 +108,11 @@ public class ElevatorInspector extends JFrame implements Runnable {
         }
         JTable elevatorTable = new JTable(model);
         this.elevatorTable = elevatorTable;
-
+        elevatorTable.setDefaultEditor(Object.class, null);
+        elevatorTable.getColumnModel().getColumn(1).setCellRenderer(new CustomCellRenderer(1 , 2, Color.red));
+        elevatorTable.getColumnModel().getColumn(2).setCellRenderer(new CustomCellRenderer(1 , 2, Color.red));
+        elevatorTable.getColumnModel().getColumn(3).setCellRenderer(new CustomCellRenderer(1 , 2, Color.red));
+        elevatorTable.getColumnModel().getColumn(4).setCellRenderer(new CustomCellRenderer(1 , 2, Color.red));
 
         elevatorTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
@@ -135,6 +140,14 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elevatorTable.getTableHeader().setReorderingAllowed(false);
 
         testPanel.setLayout(new GridLayout(4,1));
+        DefaultCaret caret = (DefaultCaret)elev1TextArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        DefaultCaret caret2 = (DefaultCaret)elev2TextArea.getCaret();
+        caret2.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        DefaultCaret caret3 = (DefaultCaret)elev3TextArea.getCaret();
+        caret3.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        DefaultCaret caret4 = (DefaultCaret)elev4TextArea.getCaret();
+        caret4.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
         testPanel.add(elev1TextArea);
         testPanel.add(elev2TextArea);
         testPanel.add(elev3TextArea);
@@ -143,11 +156,11 @@ public class ElevatorInspector extends JFrame implements Runnable {
         testPanel.setBorder(BorderFactory.createTitledBorder("Elevator Logs"));
         testPanel2.setBorder(BorderFactory.createTitledBorder("Control Panel"));
         //gbc.insets = new Insets(0, 150, 0, 150);
-        addObject(scrollPane, this, 0,0,1,1, 0.1, 0.224);
+        addObject(scrollPane, this, 0,0,1,1, 0.11, 0.224);
         gbc.insets = new Insets(0, 0, 0, 0);
         gbc.fill = GridBagConstraints.BOTH;
         addObject(testPanel, this, 1,0,1,1, 0.4, 0.4);
-        addObject(testPanel2, this, 2,0,1,1, 0.3, 0.4);
+        addObject(testPanel2, this, 2,0,1,1, 0.1, 0.4);
         testPanel2.setLayout(new BorderLayout());
         testPanel2.add(new JScrollPane(SchedulerTextArea), BorderLayout.CENTER);
         //System.out.println(elev2TextArea.getWidth());
@@ -169,29 +182,39 @@ public class ElevatorInspector extends JFrame implements Runnable {
         }
     }
 
+    private void setTableVal(int col, String val)
+    {
+            for (int row = 0; row < elevatorTable.getRowCount(); row++) {
+                if (!elevatorTable.getValueAt(row, col).equals("*")) elevatorTable.setValueAt(val, row, col);
+            }
+    }
+
+
     private void getMessages()
     {
         try{
             String message = store.receiveLog();
             if (!message.isEmpty()) {
-                if (message.contains("Scheduler")) { // Scheduler
+                if (message.contains("Scheduler-1")) { // Scheduler
                     updateSchedulerLog(message);
 //                    int semiIndex = message.indexOf(":");
 //                    String messageText = message.substring(semiIndex + 1);
                 }
                 else if(message.contains("Elevator-")){ // Elevator
+
 //                    int elevatorId = Integer.parseInt(message.substring(message.indexOf("-") + 1));
                     int elevatorId = Character.getNumericValue(message.charAt(message.indexOf("-")+1));
                     Map<Integer, ArrayList<Serializable>> allElevators = store.getElevators();
                     ArrayList<Serializable> currentElevatorInfo = allElevators.get(elevatorId);
+                    setTableVal(elevatorId, "");
                     int currentFloor = (Integer) currentElevatorInfo.get(2);
-                    int destination = (Integer) currentElevatorInfo.get(3);
-                    destinationColor(elevatorId, destination);
+                    int destination = (Integer) currentElevatorInfo.get(4);
+                    if ((int)currentElevatorInfo.get(3) != 0) destinationColor(elevatorId, destination);
                     updateElevatorLog(elevatorId, message);
                     if (message.contains("Error-1")) { // transient error
-                        moveElevatorGUI(elevatorId, currentFloor, 1);
+                        setTableVal(elevatorId, "-");
                     } else if (message.contains("Error-2")) { // hard fault error
-                        moveElevatorGUI(elevatorId, currentFloor, 2);
+                        setTableVal(elevatorId, "*");
                     } else{
                         moveElevatorGUI(elevatorId, currentFloor, 0);
                     }
@@ -228,21 +251,24 @@ public class ElevatorInspector extends JFrame implements Runnable {
     }
 
     public void moveElevatorGUI(int elevatorId, int floor, int error) {
-        Color color = switch (error) {
-            case 0 -> Color.GREEN;
-            case 1 -> Color.YELLOW;
-            case 2 -> Color.RED;
-            default -> Color.CYAN; //Nothing used for testing
+        String val = switch (error) {
+            case 0 -> "A";
+            case 1 -> "-";
+            case 2 -> "*";
+            default -> ""; //Nothing used for testing
         };
-        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
-        elevatorTable.repaint();
+
+        //elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
+        //elevatorTable.repaint();
+        elevatorTable.setValueAt(val, 22 - floor, elevatorId);
     }
 
     //Highlight the destination color of elevater it wants to go to
     public void destinationColor(int elevatorId, int destination) {
-        Color color = Color.blue;
-        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(destination, elevatorId, color));
-        elevatorTable.repaint();
+        //Color color = Color.blue;
+        //elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(destination, elevatorId, color));
+        //elevatorTable.repaint();
+        elevatorTable.setValueAt("O", 22-destination, elevatorId);
     }
 
 
