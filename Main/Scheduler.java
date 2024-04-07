@@ -32,7 +32,7 @@ public class Scheduler implements Runnable {
     private Map<Integer, Map<Integer, LinkedList<Integer>>> srcDestPairs;
     private  Map<Integer, Map<Integer, Integer>> srcErrorPairs;
     private Map<Integer, Integer> elevatorPassengers;
-
+    private final int MAX_ATTEMPTS = 5;
     private int requestsDone = 0;
 
     /**
@@ -112,7 +112,8 @@ public class Scheduler implements Runnable {
                 destFloors.remove(entry.getKey()); //remove corresponding destination floors queue
                 srcDestPairs.remove(entry.getKey());
                 srcErrorPairs.remove(entry.getKey());
-                System.out.println("Scheduler removing Elevator " + entry.getKey() + " from scheduling");
+//                System.out.println("Scheduler removing Elevator " + entry.getKey() + " from scheduling");
+                sendLog("Scheduler-1:" + "Scheduler removing Elevator " + entry.getKey() + " from scheduling");
             }
         }
     }
@@ -155,7 +156,8 @@ public class Scheduler implements Runnable {
                         }
 
                         // check number of people boarding:
-                        System.out.println("Elevator-" + key + ": " + (estimatedPassengers - elevatorPassengers.get(key) + " passengers boarded"));
+//                        System.out.println("Elevator-" + key + ": " + (estimatedPassengers - elevatorPassengers.get(key) + " passengers boarded"));
+                        sendLog("Elevator-" + key + ": " + (estimatedPassengers - elevatorPassengers.get(key) + " passengers boarded"));
                         elevatorPassengers.put(key, estimatedPassengers);
                         if (!srcDestPairs.get(key).get(currFloor).isEmpty()) //if requests remain, reassign them
                         {
@@ -169,7 +171,8 @@ public class Scheduler implements Runnable {
                     }
                     else //if elevator is full, "press the button again" aka reassign requests
                     {
-                        System.out.println("Elevator " + key + " is full! Reassigning");
+//                        System.out.println("Elevator " + key + " is full! Reassigning");
+                        sendLog("Elevator-" + key + ": is full! Reassigning");
                         if (!srcDestPairs.get(key).get(currFloor).isEmpty())
                         {
                             while (!srcDestPairs.get(key).get(currFloor).isEmpty())
@@ -181,8 +184,9 @@ public class Scheduler implements Runnable {
                     }
                     srcDestPairs.get(key).remove((Integer)sourceElevs.get(key).get(2));
 
-                    System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
+//                    System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
                     System.out.println("Destination now contains: " + destFloors.get(key));
+                    sendLog("Elevator-" + key + ": now has " + elevatorPassengers.get(key) + " passengers");
 
                     //destFloors.get(key).addAll(srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)));
                     sourceFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
@@ -191,7 +195,8 @@ public class Scheduler implements Runnable {
                     sendToClosest(key);
                 } else if (!destFloors.get(key).isEmpty() && contains(destFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a destination floor?
                 {
-                    System.out.println("Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
+//                    System.out.println("Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
+                    sendLog("Scheduler-1: Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
 
                     doDestinations(sourceElevs, key, currFloor);
                     Thread.sleep(10);
@@ -205,11 +210,13 @@ public class Scheduler implements Runnable {
         int passengers = Collections.frequency(destFloors.get(key), currFloor);
         elevatorPassengers.put(key, elevatorPassengers.get(key) - passengers);
         requestsDone += passengers;
-        System.out.println("Elevator " + key + " dropped " + passengers + " passengers");
-        System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
+//        System.out.println("Elevator " + key + " dropped " + passengers + " passengers");
+//        System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
+        sendLog("Elevator-" + key + ": dropped " + passengers + " passengers, now has "+ elevatorPassengers.get(key) + "passengers");
 
         destFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
-        System.out.println("Finished " + requestsDone + " requests!");
+//        System.out.println("Finished " + requestsDone + " requests!");
+        sendLog("Scheduler-1: Finished " + requestsDone + " requests!");
     }
 
     /**
@@ -560,6 +567,46 @@ public class Scheduler implements Runnable {
         System.out.println("New Lists: " + closestID + " " + srcDestPairs.get(closestID).values());
     }
 
+    protected void packetSentGetAck(String message){
+
+        boolean ackBool = false;
+        byte[] receiveData = new byte[1024];
+        DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+        try {
+            int attempts = 0;
+            while (!ackBool && attempts < MAX_ATTEMPTS) {
+                try {
+                    //System.out.println("Elevator " + elevatorId + " Sending: " + message + " (packetAck)" );
+                    byte[] sendData = HelperFunctions.generateMsg(message);
+                    DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, InetAddress.getLocalHost(), 5000); // 5000
+                    sendReceiveSocket.send(sendPacket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                attempts++;
+                try {
+                    sendReceiveSocket.receive(receivePacket);
+                    String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
+                    //System.out.println("Elevator " + elevatorId + " Received: " + translatedMessage + " (packetSentAck)" );
+
+                    if (translatedMessage.equals("ACK" + message)) {
+                        ackBool = true;
+                        //System.out.println("Elevator " + elevatorId + " has been acknowledged by the scheduler.");
+                    }
+                } catch (SocketTimeoutException e) {
+                    System.out.println("Attempt " + attempts + ": No response from scheduler, retrying...");
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("Failed to receive acknowledgement from scheduler after " + MAX_ATTEMPTS + " attempts.");
+            e.printStackTrace();
+        }
+    }
+    protected void sendLog(String message)
+    {
+        String logMessage = "05" + message + "0";
+        packetSentGetAck(logMessage);
+    }
     /*
     Setters and getters for testing purposes
      */
