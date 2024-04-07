@@ -254,6 +254,9 @@ public class ElevatorInspector extends JFrame implements Runnable {
         this.repaint();
     }
 
+    /**
+     * Run loop for inspector thread
+     */
     @Override
     public void run() {
         while (!Thread.interrupted())
@@ -262,6 +265,11 @@ public class ElevatorInspector extends JFrame implements Runnable {
         }
     }
 
+    /**
+     * Update specific table column
+     * @param col Column being updated
+     * @param val value the column is being updated with
+     */
     private void setTableVal(int col, String val)
     {
             for (int row = 0; row < elevatorTable.getRowCount(); row++) {
@@ -270,6 +278,9 @@ public class ElevatorInspector extends JFrame implements Runnable {
             }
     }
 
+    /**
+     * Updates the floor lamp status
+     */
     private void updateFloorLamps()
     {
         for (int row = 0; row < 22; row++)
@@ -278,6 +289,9 @@ public class ElevatorInspector extends JFrame implements Runnable {
         }
     }
 
+    /**
+     * Get message logs from store
+     */
     private void getMessages()
     {
         try{
@@ -344,6 +358,11 @@ public class ElevatorInspector extends JFrame implements Runnable {
     }
 
 
+    /**
+     * Update elevator log
+     * @param elevatorId elevator log being updated
+     * @param message message being added to log
+     */
     public void updateElevatorLog(int elevatorId, String message) {
         switch (elevatorId) {
             case 1-> elev1TextArea.append(message + "\n");
@@ -354,10 +373,18 @@ public class ElevatorInspector extends JFrame implements Runnable {
         }
     }
 
+    /**
+     * Update the scheduler log
+     * @param message message being added to the scheduler log
+     */
     public void updateSchedulerLog(String message){
         SchedulerTextArea.append(message + "\n");
     }
 
+    /**
+     * Print to all elevator logs
+     * @param message message to be added
+     */
     public void printALlElevators(String message){
         elev1TextArea.append(message + "\n");
         elev2TextArea.append(message + "\n");
@@ -365,6 +392,12 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elev4TextArea.append(message + "\n");
     }
 
+    /**
+     * Move the elevator square to specific cell in table
+     * @param elevatorId c
+     * @param floor floor elevator is at
+     * @param error type of fault, if any
+     */
     public void moveElevatorGUI(int elevatorId, int floor, int error) {
         String val = switch (error) {
             case 0 -> "A";
@@ -373,20 +406,30 @@ public class ElevatorInspector extends JFrame implements Runnable {
             default -> ""; //Nothing used for testing
         };
 
-        //elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
-        //elevatorTable.repaint();
         elevatorTable.setValueAt(val, 22 - floor, elevatorId);
     }
 
-    //Highlight the destination color of elevater it wants to go to
+    /**
+     * Highlights the destination that an elevator wants to go to
+     * @param elevatorId elevator being moved
+     * @param destination floor elevator wants to go
+     */
     public void destinationColor(int elevatorId, int destination) {
-        //Color color = Color.blue;
-        //elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(destination, elevatorId, color));
-        //elevatorTable.repaint();
         elevatorTable.setValueAt("O", 22-destination, elevatorId);
     }
 
 
+    /**
+     * Adds an object to the frame
+     * @param component component being added
+     * @param parentContainer what the component is being added to
+     * @param gridx x position on the frame
+     * @param gridy y position on the frame
+     * @param gridwidth number of cells in the x-axis it should span
+     * @param gridheight number of cells in the y-axis it should span
+     * @param weightx the "weight" of the object in the x-axis
+     * @param weighty the "weight" of the object in the y-axis
+     */
     public void addObject(Component component, Container parentContainer, int gridx, int gridy, int gridwidth, int gridheight, double weightx, double weighty){
 
         gbc.gridx = gridx;
@@ -412,90 +455,6 @@ public class ElevatorInspector extends JFrame implements Runnable {
     }
 }
 
-class SplitTableCellRenderer implements TableCellRenderer {
 
-    CellPanel rendererPanel;
 
-    public SplitTableCellRenderer()
-    {
-        super();
-        rendererPanel = new CellPanel();
-    }
-    @Override
-    public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-        if(table.getValueAt(row, column) == null) {
-            CellPanel panel = new CellPanel();
-            panel.setOpaque(true);
-            panel.requestFocusInWindow();
-            table.setValueAt(panel, row, column);
-            return panel;
-        }
-        else return (CellPanel) table.getValueAt(row, column);
-    }
-}
 
-class CellPanel extends JPanel {
-
-    JPanel upLamp;
-    JPanel downLamp;
-    JPanel floorNumber;
-    JTextArea floorNumberText;
-
-    public CellPanel() {
-        this.setLayout(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        floorNumber = new JPanel();
-        floorNumber.setOpaque(true);
-        floorNumber.setBackground(Color.white);
-        gbc.gridwidth = 1;
-        gbc.gridheight = 2;
-        gbc.weighty = 1.0;
-        this.add(floorNumber, gbc);
-        floorNumberText = new JTextArea();
-        floorNumber.add(floorNumberText);
-        upLamp = new JPanel();
-        upLamp.setOpaque(true);
-        upLamp.setBackground(Color.white);
-        gbc.gridheight = 1;
-        gbc.weighty = 1.0;
-        gbc.gridwidth = GridBagConstraints.REMAINDER;
-        this.add(upLamp, gbc);
-        downLamp = new JPanel();
-        downLamp.setOpaque(true);
-        downLamp.setBackground(Color.white);
-        this.add(downLamp, gbc);
-    }
-
-    public void upLampOn() {
-        upLamp.setBackground(Color.yellow);
-        //upLamp.update();
-        //this.repaint();
-    }
-
-    public void upLampOff() {
-        upLamp.setBackground(Color.white);
-        upLamp.updateUI();
-        //this.repaint();
-    }
-
-    public void downLampOn() {
-        downLamp.setBackground(Color.yellow);
-        //downLamp.repaint();
-        //this.repaint();
-    }
-
-    public void downLampOff() {
-        downLamp.setBackground(Color.white);
-        //downLamp.repaint();
-        //this.repaint();
-    }
-
-    public void setFloorNumber(String text) {
-        floorNumberText.setText(text);
-    }
-
-    public String getFloorNumberText() {
-        return floorNumberText.getText();
-    }
-}

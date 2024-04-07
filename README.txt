@@ -36,7 +36,7 @@ Steps:
   All 11 JUnit tests should run
 
 All system files (21)
-    CustomCellRenderer - Changes the colours of the error indicators in the GUI based on what type of error is handled
+    CustomCellRenderer.java - Changes the colours of the error indicators in the GUI based on what type of error is handled
     Elevator.java - Class file holding the Elevator Subsystem of the simulation
     ELEVATOR_BUTTON.java - File holding an ENUM representing various button states for elevator
     ElevatorEvent.java - Class used to encapsulate the information required by floor events
