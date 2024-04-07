@@ -2,10 +2,9 @@
  * Represent the GUI interface for the elevator subsystem
  * @author Marwan Zeid
  * @author Garrison Su
- * @author Eric ???
+ * @author Eric Wang
  * @version 2024-04-07
  */
-
 
 package Main;
 
@@ -46,6 +45,10 @@ public class ElevatorInspector extends JFrame implements Runnable {
     JTextField lastRequest;
     JTextField totalMoves;
 
+    /**
+     * Constructor for Elevator Inspector
+     * @param store store where values being pulled are from
+     */
     public ElevatorInspector(SchedulerStoreInt store)
     {
         super("Elevator Inspector");
@@ -57,6 +60,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         setResizable(false);
         setLayout(layout);
 
+        //constructors for textareas and textfields
         elev1TextArea = new JTextArea();
         elev2TextArea = new JTextArea();
         elev3TextArea = new JTextArea();
@@ -71,6 +75,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         lastRequest = new JTextField("", 10);
         totalMoves = new JTextField("", 10);
 
+        //setting up borders for textfields
         Border border = BorderFactory.createLineBorder(Color.BLACK);
         SchedulerTextArea.setBorder(BorderFactory.createCompoundBorder(border,
                 BorderFactory.createEmptyBorder(10, 10, 10, 1)));
@@ -83,8 +88,10 @@ public class ElevatorInspector extends JFrame implements Runnable {
                 BorderFactory.createEmptyBorder(10, 1, 1, 10)));
         elev4TextArea.setBorder(BorderFactory.createCompoundBorder(border,
                 BorderFactory.createEmptyBorder(10, 1, 10, 10)));
+        elev4TextArea.setBorder(BorderFactory.createCompoundBorder(border,
+                BorderFactory.createEmptyBorder(10, 1, 10, 10)));
 
-        SchedulerTextArea.setPreferredSize(new Dimension(200,400));
+        //SchedulerTextArea.setPreferredSize(new Dimension(200,400));
 
 
         elev1TextArea.setLineWrap(true);
@@ -112,13 +119,11 @@ public class ElevatorInspector extends JFrame implements Runnable {
         lastRequest.setEditable(false);
         totalMoves.setEditable(false);
 
-//        JTable elevatorTable = new JTable(new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 22));
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 0);
         for (int i = 22; i >= 1; i--) {
             model.addRow(new Object[]{null, "", "", "", ""});
-
-
         }
+
         JTable elevatorTable = new JTable(model);
         this.elevatorTable = elevatorTable;
         elevatorTable.setDefaultEditor(Object.class, null);
@@ -144,11 +149,6 @@ public class ElevatorInspector extends JFrame implements Runnable {
         JPanel testPanel = new JPanel();
         JPanel testPanel2 = new JPanel();
 
-
-        /*DefaultTableCellRenderer render1 = new DefaultTableCellRenderer();
-        render1.setBackground(Color.lightGray);
-        elevatorTable.getColumnModel().getColumn(0).setCellRenderer(render1);*/
-
         elevatorTable.getColumnModel().getColumn(0).setCellRenderer(new SplitTableCellRenderer());
         elevatorTable.getTableHeader().setReorderingAllowed(false);
 
@@ -169,10 +169,10 @@ public class ElevatorInspector extends JFrame implements Runnable {
         JScrollPane scrollElev3 = new JScrollPane(elev3TextArea);
         JScrollPane scrollElev4 = new JScrollPane(elev4TextArea);
         JScrollPane scrollSched = new JScrollPane(SchedulerTextArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollElev1.setPreferredSize(new Dimension(50,100));
-        scrollElev2.setPreferredSize(new Dimension(50,100));
-        scrollElev3.setPreferredSize(new Dimension(50,100));
-        scrollElev4.setPreferredSize(new Dimension(50,100));
+        scrollElev1.setPreferredSize(new Dimension(40,100));
+        scrollElev2.setPreferredSize(new Dimension(40,100));
+        scrollElev3.setPreferredSize(new Dimension(40,100));
+        scrollElev4.setPreferredSize(new Dimension(40,100));
         scrollSched.setPreferredSize(new Dimension(200,100));
 
         testPanel.add(scrollElev1);
@@ -187,7 +187,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         addObject(scrollPane, this, 0,0,1,1, 0.11, 0.224);
         gbc.insets = new Insets(0, 0, 0, 0);
         gbc.fill = GridBagConstraints.BOTH;
-        addObject(testPanel, this, 1,0,1,1, 0.36, 0.4);
+        addObject(testPanel, this, 1,0,1,1, 0.32, 0.4);
         addObject(testPanel2, this, 2,0,1,1, 0.125, 0.4);
         testPanel2.setLayout(new GridLayout(2,1));
         testPanel2.add(scrollSched);
@@ -294,32 +294,34 @@ public class ElevatorInspector extends JFrame implements Runnable {
                     int elevatorId = Character.getNumericValue(message.charAt(message.indexOf("-")+1));
                     Map<Integer, ArrayList<Serializable>> allElevators = store.getElevators();
                     ArrayList<Serializable> currentElevatorInfo = allElevators.get(elevatorId);
-                    if (!message.contains("opening") & !message.contains("closing")) setTableVal(elevatorId, "");
-                    int currentFloor = (Integer) currentElevatorInfo.get(2);
-                    int destination = (Integer) currentElevatorInfo.get(4);
+                    if (currentElevatorInfo != null) {
+                        if (!message.contains("opening") & !message.contains("closing")) setTableVal(elevatorId, "");
+                        int currentFloor = (Integer) currentElevatorInfo.get(2);
+                        int destination = (Integer) currentElevatorInfo.get(4);
 
-                    if  (destination == 0) ;
-                    else if (destination < currentFloor) {
-                        ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).downLampOn();
-                        System.out.println("down lamp on " + destination);
-                    }
-                    else if (destination > currentFloor) {
-                        ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).upLampOn();
-                        System.out.println("up lamp on " + destination);
-                    }
-                    else {
-                        if ((int)currentElevatorInfo.get(3) == 1) ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).upLampOff();
-                        else if ((int)currentElevatorInfo.get(3) == 2) ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).downLampOff();
-                    }
+                        if (destination == 0) ;
+                        else if (destination < currentFloor) {
+                            ((CellPanel) elevatorTable.getValueAt(22 - destination, 0)).downLampOn();
+                            System.out.println("down lamp on " + destination);
+                        } else if (destination > currentFloor) {
+                            ((CellPanel) elevatorTable.getValueAt(22 - destination, 0)).upLampOn();
+                            System.out.println("up lamp on " + destination);
+                        } else {
+                            if ((int) currentElevatorInfo.get(3) == 1)
+                                ((CellPanel) elevatorTable.getValueAt(22 - destination, 0)).upLampOff();
+                            else if ((int) currentElevatorInfo.get(3) == 2)
+                                ((CellPanel) elevatorTable.getValueAt(22 - destination, 0)).downLampOff();
+                        }
 
-                    if ((int)currentElevatorInfo.get(3) != 0) destinationColor(elevatorId, destination);
-                    updateElevatorLog(elevatorId, message);
-                    if (message.contains("Error-1")) { // transient error
-                        setTableVal(elevatorId, "-");
-                    } else if (message.contains("Error-2")) { // hard fault error
-                        setTableVal(elevatorId, "*");
-                    } else{
-                        moveElevatorGUI(elevatorId, currentFloor, 0);
+                        if ((int) currentElevatorInfo.get(3) != 0) destinationColor(elevatorId, destination);
+                        updateElevatorLog(elevatorId, message);
+                        if (message.contains("Error-1")) { // transient error
+                            setTableVal(elevatorId, "-");
+                        } else if (message.contains("Error-2")) { // hard fault error
+                            setTableVal(elevatorId, "*");
+                        } else {
+                            moveElevatorGUI(elevatorId, currentFloor, 0);
+                        }
                     }
                 } else if (message.contains("all")){
                     printALlElevators(message);

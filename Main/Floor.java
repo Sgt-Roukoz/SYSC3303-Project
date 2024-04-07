@@ -20,15 +20,13 @@ import java.time.LocalTime;
  * @version 2024-03-15
  */
 public class Floor implements Runnable{
-    private final int MAX_FLOORS = 22;
-    private final Random rand;
+
     private final DatagramSocket sendReceiveSocket;
     private DatagramPacket sendPacket;
     private LocalTime prevTime;
     private LocalTime curTime;
 
     public Floor() {
-        this.rand = new Random();
         this.sendPacket = new DatagramPacket(new byte[100], 100);
         try {
             this.sendReceiveSocket = new DatagramSocket();
@@ -60,6 +58,7 @@ public class Floor implements Runnable{
     /**
      * Processes given string input, sending the appropriate event to the scheduler
      * @param input the given string input to be processed
+     * @param lastLine if the input being processed is the last input
      */
     public void processInput(String input, boolean lastLine) {
         String[] split = input.split(" ");
@@ -92,6 +91,9 @@ public class Floor implements Runnable{
         } else{
             msg += "2";
         }
+
+        if (lastLine) msg += ",1";
+        else msg += ",0";
 
         System.out.println(msg);
 

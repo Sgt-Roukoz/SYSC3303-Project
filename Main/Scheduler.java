@@ -33,10 +33,11 @@ public class Scheduler implements Runnable {
     private Map<Integer, Map<Integer, LinkedList<Integer>>> srcDestPairs;
     private  Map<Integer, Map<Integer, Integer>> destErrorPairs;
     private Map<Integer, Integer> elevatorPassengers;
-
     private int requestsDone = 0;
     private int moveRequestsSent = 0;
     boolean receivedFirst = false;
+    boolean lastRequestReceived = false;
+
     /**
      * Scheduler class constructor
      *
@@ -82,6 +83,7 @@ public class Scheduler implements Runnable {
                         store.setFirstRequest(String.valueOf(new Timestamp((new Date()).getTime())));
                         receivedFirst = true;
                     }
+                    lastRequestReceived = floorRequestToBeProcessed.isLastReq();
                     store.addLog("Scheduler-1: Scheduler is processing: " + floorRequestToBeProcessed);
                     findClosest(floorRequestToBeProcessed.getSourceFloor(), floorRequestToBeProcessed.getDestFloor(), floorRequestToBeProcessed.getFaultType(), -1);
                 }
@@ -198,9 +200,14 @@ public class Scheduler implements Runnable {
                     sendToClosest(key);
                 } else if (!destFloors.get(key).isEmpty() && contains(destFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a destination floor?
                 {
-                    store.addLog("Scheduler-1: Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
 
                     doDestinations(sourceElevs, key, currFloor);
+                    if (checkAllElevatorsIdle() && lastRequestReceived)
+                    {
+                        store.setLastRequest(String.valueOf(new Timestamp((new Date()).getTime())));
+                        System.out.println("Finished!!");
+                    }
+                    store.addLog("Scheduler-1: Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
                     Thread.sleep(10);
                     sendToClosest(key);
                 }
@@ -208,6 +215,29 @@ public class Scheduler implements Runnable {
         }
     }
 
+    /**
+     * Check if all elevators are idle
+     * @return Returns true if all elevators are idle, false otherwise
+     * @throws RemoteException
+     */
+    private boolean checkAllElevatorsIdle() throws RemoteException {
+        for (Integer key : store.getElevators().keySet())
+        {
+            if ((int)store.getElevators().get(key).get(3) != 0)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Check if an elevator is at a destination
+     * @param sourceElevs elevators in question
+     * @param key the elevator id
+     * @param currFloor current floor
+     * @throws RemoteException
+     */
     private void doDestinations(Map<Integer, ArrayList<Serializable>> sourceElevs, Integer key, int currFloor) throws RemoteException {
         int passengers = Collections.frequency(destFloors.get(key), currFloor);
         elevatorPassengers.put(key, elevatorPassengers.get(key) - passengers);
