@@ -1,33 +1,33 @@
-Iteration 4
+Iteration 5
 SYSC3303A L2G6
 Winter 2024
 
-Masrur: Updating floor and ElevatorEvent to include Error column in input file
-Eric: README and UML Diagrams
-Adham: Timing Diagrams
-Garrison: Scheduler Receiver add new case
-Marwan: Simulate faults in Elevator
+Masrur: README
+Eric: GUI floor lamps, and worked on time delays for Floor
+Adham: Implementing capacity limits and calculating number of requests received by elevator by scheduler
+Garrison: Created custom cells and print statements for elevators in the GUI, and helped with the GUI in general
+Marwan: Interfacing GUI with RMI and creating message log, and helped create the GUI
 
 What is this?:
-This is a submission for Iteration 4 of the SYSC3303 Group Project
+This is a submission for Iteration 5 of the SYSC3303 Group Project
 
-This project simulates an Elevator system where there is a Floor Subsystem which controls floor events where someone is calling an elevator, the Scheduler
-Subsystem which reads the inputs from floors and coordinates with the elevator, and the Elevator Subsystem which takes the processed requests from the scheduler
-and acts upon them.
+This project simulates an Elevator system where there is a Floor Subsystem which controls floor events where someone is
+calling an elevator, the Scheduler subsystem which reads the inputs from floors and coordinates with the elevator,
+and the Elevator Subsystem which takes the processed requests from the scheduler and acts upon them.
 
-In this iteration, the codebase was organized, removing unused classes, test.txt was updated with an extra column to indicate whether there was a fault 
-and what type, Floor class was updated to read these faults and send the appropriate message to signal that a fault occurs, Scheduler is updated to 
-detect incoming faults and transmit fault information to elevators, Elevator is updated to implement said faults, and if the fault disables the 
-elevator, the Scheduler is now able to remove out of order elevators from being scheduled and reassign their unserviced requests.
+In this iteration, a graphic user interface was implemented, simulating a control panel. The Floor class was updated to
+reflect more realistic delays, Scheduler is updated to implement and observe a maximum capacity for passengers aboard an
+elevator, and to redistribute floor requests between elevators when one reaches its capacity.
 
 Installation:
-Extract L2G6_milestone_4.zip
+Extract L2G6_milestone_5.zip
 Open IntelliJ
-Click Open and select L2G6_milestone_4 project folder inside the extracted folder
+Click Open and select L2G6_milestone_5 project folder inside the extracted folder
 
-To run this, you must run each subsystem in a specific order by pressing the green run button next to each of their main methods.
-The order is: SchedulerReciever, Elevator, Scheduler and Floor.
-Any other order will cause errors, as schedulerstore is set up in receiver, and for floor requests to do anything, elevators must be accounted for
+To run this, you must run each subsystem in a specific order by pressing the green run button next to each of their main
+methods.
+The order is: SchedulerReciever, Elevator, Scheduler, ElevatorInspector and Floor.
+Any other order will cause errors, as SchedulerStore is set up in Receiver, and for floor requests to do anything, elevators must be accounted for
 
 Testing Instructions
 Steps:
@@ -35,10 +35,12 @@ Steps:
   Click on the project folder in the explorer on the left, and click Ctrl+Shift+F10
   All 11 JUnit tests should run
 
-All system files (19)
+All system files (21)
+    CustomCellRenderer - Changes the colours of the error indicators in the GUI based on what type of error is handled
     Elevator.java - Class file holding the Elevator Subsystem of the simulation
     ELEVATOR_BUTTON.java - File holding an ENUM representing various button states for elevator
     ElevatorEvent.java - Class used to encapsulate the information required by floor events
+    ElevatorInspector - File with classes used to implement GUI
     ElevatorState.java - Interface for Elevator States
     Floor.java - Class file holding the Floor Subsystem of the simulation
     HelperFunctions.java - Helper functions, mainly for string and byte[] messages
