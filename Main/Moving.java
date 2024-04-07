@@ -8,7 +8,6 @@ import java.io.IOException;
 class Moving implements ElevatorState {
     @Override
     public void entry(Elevator context) {
-        System.out.println("Elevator is moving.");
         context.sendMovingStatusUpdate();
 
         try {

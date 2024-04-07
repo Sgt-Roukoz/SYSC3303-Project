@@ -20,13 +20,13 @@ class LoadingUnloading implements ElevatorState {
     @Override
     public void doorsClosed(Elevator context) {
         try {
-            context.openDoors();
             if (context.transientFault)
             {
                 Thread.sleep(Elevator.DOOR_OPERATION_TIME/2);
-                System.out.println("ERROR-1: Elevator " + context.getElevatorId() + " doors failed to close, trying again!");
+                System.out.println("ERROR-1: Elevator " + context.getElevatorId() + " doors failed to open, trying again!");
                 context.transientFault = false;
             }
+            context.openDoors();
             context.closeDoors();
             context.setCurrentState("Idle");
         } catch (InterruptedException e) {

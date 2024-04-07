@@ -25,7 +25,7 @@ import static java.lang.Math.abs;
 public class Elevator implements Runnable {
 
     private static final long TIME_PER_FLOOR = 3000; // Average time per floor in milliseconds (Halved)
-    protected static final long DOOR_OPERATION_TIME = 5000; // Average door operation time in milliseconds (Halved)
+    protected static final long DOOR_OPERATION_TIME = 3000; // Average door operation time in milliseconds (Halved)
     private static final int ACK_LOOP_WAIT_TIME = 3000; // Time to wait for a response from the scheduler
     private int currentFloor; // current floor of elevator
     private final int elevatorId; // ID of elevator
@@ -233,29 +233,27 @@ public class Elevator implements Runnable {
                 byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
 
-
+                if (abs(currentFloor - destinationFloor) == 1 && hardFault) //simulating getting stuck between floors
+                {
+                    System.out.println("ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
+                    //ElevatorInspector.getInstance().updateElevatorLog(getElevatorId(), "ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
+                    String message = "04" + elevatorId + ",Out," + currentFloor + "0";
+                    packetSentGetAck(message);
+                    //ElevatorInspector.getInstance().moveElevatorGUI(elevatorId, currentFloor, 2 ); //Change color of elevator
+                    break;
+                }
 
                 sendReceiveSocket.receive(receivePacket);
                 String translatedMessage = HelperFunctions.translateMsg(receivePacket.getData(), receivePacket.getLength());
                 if (translatedMessage.startsWith("03")) {
                     destinationFloor = Integer.parseInt(translatedMessage.substring(5,7));
+                    checkFaultType(translatedMessage);
                     byte[] ack = HelperFunctions.generateMsg("ACK"+ translatedMessage);
                     DatagramPacket tempack = new DatagramPacket(ack, ack.length, receivePacket.getAddress(), receivePacket.getPort());
                     sendReceiveSocket.send(tempack);
-                    if (abs(currentFloor - destinationFloor) == 1 && hardFault) //simulating getting stuck between floors
-                    {
-                        System.out.println("ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
-                        //ElevatorInspector.getInstance().updateElevatorLog(getElevatorId(), "ERROR-2: Elevator" + getElevatorId() + " hasn't reached its destination, ceasing function");
-                        String message = "04" + elevatorId + ",Out," + currentFloor + "0";
-                        packetSentGetAck(message);
-                        //ElevatorInspector.getInstance().moveElevatorGUI(elevatorId, currentFloor, 2 ); //Change color of elevator
-                        break;
-                    }
-                    checkFaultType(translatedMessage);
                     System.out.println("Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
                     //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Elevator " + elevatorId + ": Moving to floor " + destinationFloor + " (current floor: " + currentFloor + ")");
                 }
-
             } catch (SocketTimeoutException e) {
                 if (destinationFloor > currentFloor) {
                     currentFloor++;
@@ -275,7 +273,6 @@ public class Elevator implements Runnable {
             arrivedAtFloor();
             System.out.println("Elevator " + elevatorId + " arrived at floor " + destinationFloor);
             //ElevatorInspector.getInstance().updateElevatorLog(elevatorId, "Arrived at floor " + destinationFloor);
-
         }
     }
 

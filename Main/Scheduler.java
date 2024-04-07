@@ -18,12 +18,10 @@ import java.util.stream.Collectors;
  * @author Garrison Su
  * @author Marwan Zeid
  * @author Masrur Husain
- * @author Adham Elmahi
- * @version 2024-04-04
+ * @version 2024-03-29
  */
 
 public class Scheduler implements Runnable {
-
     private DatagramSocket sendReceiveSocket;
     private ElevatorEvent floorRequestToBeProcessed;
     private ElevatorEvent processedRequest;
@@ -33,21 +31,22 @@ public class Scheduler implements Runnable {
     private Map<Integer, String> lastKnownDirection;
     private Map<Integer, Map<Integer, LinkedList<Integer>>> srcDestPairs;
     private  Map<Integer, Map<Integer, Integer>> srcErrorPairs;
-    private Map<Integer, Integer> currentPassengerCounts;
-    int maxPassengers = 5;
+    private Map<Integer, Integer> elevatorPassengers;
+
+    private int requestsDone = 0;
 
     /**
      * Scheduler class constructor
+     *
      */
-    public Scheduler(SchedulerStoreInt store) throws RemoteException {
+    public Scheduler(SchedulerStoreInt store) {
 
         sourceFloors = new HashMap<>();
         destFloors = new HashMap<>();
         lastKnownDirection = new HashMap<>();
         srcDestPairs = new HashMap<>();
         srcErrorPairs = new HashMap<>();
-        currentPassengerCounts = store.getPassengerCounts();
-
+        elevatorPassengers = new HashMap<>();
 
         try {
             this.store =  store;
@@ -58,7 +57,7 @@ public class Scheduler implements Runnable {
                 destFloors.put(i, new LinkedList<>());
                 srcDestPairs.put(i, new HashMap<>());
                 srcErrorPairs.put(i, new HashMap<>());
-
+                elevatorPassengers.put(i, 0);
                 lastKnownDirection.put(i, "IDLE");
             }
         } catch (SocketException | RemoteException se) {
@@ -79,7 +78,7 @@ public class Scheduler implements Runnable {
                 readFloorRequest();
                 if (floorRequestToBeProcessed != null) {
                     System.out.println("Scheduler is processing: " + floorRequestToBeProcessed);
-                    findClosest(floorRequestToBeProcessed.getSourceFloor(), floorRequestToBeProcessed.getDestFloor(), floorRequestToBeProcessed.getFaultType());
+                    findClosest(floorRequestToBeProcessed.getSourceFloor(), floorRequestToBeProcessed.getDestFloor(), floorRequestToBeProcessed.getFaultType(), -1);
                 }
 
                 Thread.sleep(100);
@@ -100,24 +99,20 @@ public class Scheduler implements Runnable {
         {
             if ((int)entry.getValue().get(3) == 3)
             {
+                store.removeElevator(entry.getKey()); // remove elevator from store
                 int destination = (int) entry.getValue().get(4);
                 sourceFloors.remove(entry.getKey()); //remove corresponding sourceFloors queue
                 srcErrorPairs.get(entry.getKey()).put(destination, 0);
                 for (Map.Entry<Integer, LinkedList<Integer>> subEntry: srcDestPairs.get(entry.getKey()).entrySet()) //reassign unserviced requests
                 {
-                    for (Integer subDest: subEntry.getValue())
-                    {
-                        if (!destFloors.get(entry.getKey()).contains(subDest)) // if the elevator has not reached the source floor of a request
-                        {
-                            findClosest(subEntry.getKey(), subDest, srcErrorPairs.get(entry.getKey()).get(subEntry.getKey())); //reassign request
-                        }
+                    for (Integer subDest: subEntry.getValue()) {
+                        findClosest(subEntry.getKey(), subDest, srcErrorPairs.get(entry.getKey()).get(subEntry.getKey()), -1); //reassign request
                     }
                 }
                 destFloors.remove(entry.getKey()); //remove corresponding destination floors queue
                 srcDestPairs.remove(entry.getKey());
                 srcErrorPairs.remove(entry.getKey());
                 System.out.println("Scheduler removing Elevator " + entry.getKey() + " from scheduling");
-                store.removeElevator(entry.getKey()); // remove elevator from store
             }
         }
     }
@@ -136,132 +131,85 @@ public class Scheduler implements Runnable {
      */
     private void checkArrivedAtAnyFloor() throws RemoteException, InterruptedException {
         Map<Integer, ArrayList<Serializable>> sourceElevs = store.getElevators();
-        currentPassengerCounts = store.getPassengerCounts();
         for (Integer key : sourceElevs.keySet())
         {
             if ((int)sourceElevs.get(key).get(3) == 0) //is elevator idle?
             {
-                if (!sourceFloors.get(key).isEmpty() && contains(sourceFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a source floor?
+                int currFloor = (Integer)sourceElevs.get(key).get(2);
+                if (!sourceFloors.get(key).isEmpty() && contains(sourceFloors.get(key),currFloor)) //is it at a source floor?
                 {
                     System.out.println("Elevator " + key + " at floor " + sourceElevs.get(key).get(2));
-                    System.out.println("Destinations contains: " + srcDestPairs.get(key));
-                    int passengers = currentPassengerCounts.get(key);
-                    int currFloor = (int) sourceElevs.get(key).get(2);
-
-                    if (passengers < maxPassengers ) {
-
-
-                        while (passengers< 5 && !srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).isEmpty())
-                        {
-                            destFloors.get(key).add(srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).remove());
-                            passengers++;
-                            store.updateElevator(key, 5, passengers);
-                        }
-                        System.out.println("Destinations now: " + destFloors.get(key));
-
-                        if (!srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).isEmpty()){
-                            while (!srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).isEmpty())
-                            {
-                                //reassign remaining requests
-                                findClosest(currFloor, srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).remove(), 0);
-                            }
-                        }
-                        srcDestPairs.get(key).remove((Integer)sourceElevs.get(key).get(2));
-
-                        // Send the elevator to the closest floor as it has space and just loaded a passenger
-                        sendToClosest(key);
-                    } else {
-                        // Elevator is full, print a message or handle accordingly
-                        System.out.println("Elevator " + key + " at floor " + sourceElevs.get(key).get(2) + " is full.");
-
-                        // Reassign the source floor to another elevator
-                        Integer newElevatorID = findNewElevatorForReassignment(key, (Integer)sourceElevs.get(key).get(2));
-                        if (newElevatorID != null) {
-                            // Reassign the pickup request to the new elevator
-                            if (!srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).isEmpty()){
-                                while (!srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).isEmpty())
-                                {
-                                    findClosest(currFloor, srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)).remove(), srcErrorPairs.get(key).remove(currFloor));
-                                }
-                                srcDestPairs.get(key).remove((Integer)sourceElevs.get(key).get(2));
-                            }
-                        } else {
-                            // Handle the case where no elevators are available for reassignment
-                            System.out.println("No available elevators to reassign the pickup request at floor " + sourceElevs.get(key).get(2));
-                        }
-
-
-                        sourceFloors.get(key).remove((Integer)sourceElevs.get(key).get(2));
+                    //is it also a destfloor?
+                    if (Collections.frequency(destFloors.get(key), currFloor) > 0)
+                    {
+                        doDestinations(sourceElevs, key, currFloor);
                     }
 
+                    if (elevatorPassengers.get(key) < 5)
+                    {
+                        int estimatedPassengers = elevatorPassengers.get(key);
+                        while (estimatedPassengers < 5 && !srcDestPairs.get(key).get(currFloor).isEmpty()) // add destinations based on number of passengers boarding
+                        {
+                            destFloors.get(key).add(srcDestPairs.get(key).get(currFloor).remove());
+                            estimatedPassengers++;
+                        }
+
+                        // check number of people boarding:
+                        System.out.println("Elevator-" + key + ": " + (estimatedPassengers - elevatorPassengers.get(key) + " passengers boarded"));
+                        elevatorPassengers.put(key, estimatedPassengers);
+                        if (!srcDestPairs.get(key).get(currFloor).isEmpty()) //if requests remain, reassign them
+                        {
+                            while (!srcDestPairs.get(key).get(currFloor).isEmpty())
+                            {
+                                int dest = srcDestPairs.get(key).get(currFloor).remove();
+                                findClosest(currFloor, dest, 0, key);
+                            }
+                        }
+
+                    }
+                    else //if elevator is full, "press the button again" aka reassign requests
+                    {
+                        System.out.println("Elevator " + key + " is full! Reassigning");
+                        if (!srcDestPairs.get(key).get(currFloor).isEmpty())
+                        {
+                            while (!srcDestPairs.get(key).get(currFloor).isEmpty())
+                            {
+                                int dest = srcDestPairs.get(key).get(currFloor).remove();
+                                findClosest(currFloor, dest, 0, key);
+                            }
+                        }
+                    }
+                    srcDestPairs.get(key).remove((Integer)sourceElevs.get(key).get(2));
+
+                    System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
+                    System.out.println("Destination now contains: " + destFloors.get(key));
+
                     //destFloors.get(key).addAll(srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)));
-                    //srcDestPairs.get(key).remove((Integer)sourceElevs.get(key).get(2));
                     sourceFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
                     srcErrorPairs.get(key).remove(sourceElevs.get(key).get(2)); //remove the error pair
-                    System.out.println("Elevator " + key + ": Passengers: " + store.getPassengerCounts().get(key));
-                    Thread.sleep(10);
+                    Thread.sleep(200);
                     sendToClosest(key);
                 } else if (!destFloors.get(key).isEmpty() && contains(destFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a destination floor?
                 {
                     System.out.println("Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
-                    // Decrease passenger count when elevator arrives at destination floor
-                    int passengers = store.getPassengerCounts().get(key);
-                    int passengersLeft = Collections.frequency(destFloors.get(key), sourceElevs.get(key).get(2));
-                    store.updateElevator(key, 5, Math.max(0, passengers - passengersLeft));
-                    destFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
-                    System.out.println("Elevator " + key + ": Passengers: " + store.getPassengerCounts().get(key));
-                    Thread.sleep(10);
+
+                    doDestinations(sourceElevs, key, currFloor);
+                    Thread.sleep(200);
                     sendToClosest(key);
                 }
             }
         }
     }
 
-    /**
-     * Finds a new elevator for reassignment of a pickup request when the current elevator is full.
-     * It searches through all elevators and selects the one with the fewest passengers and closest proximity
-     * to the source floor that is not the current elevator.
-     *
-     * @param currentElevatorID The ID of the current full elevator.
-     * @param sourceFloor       The floor where the pickup request is made.
-     * @return The ID of the new elevator selected for reassignment, or null if no suitable elevator is found.
-     * @throws RemoteException If there is a communication-related exception that may occur during the execution of a remote method call.
-     */
-    private Integer findNewElevatorForReassignment(Integer currentElevatorID, Integer sourceFloor) throws RemoteException {
-        Map<Integer, ArrayList<Serializable>> elevators = store.getElevators();
-        Map<Integer, Integer> currentPassengerCounts = store.getPassengerCounts(); // Make sure you have this line to get the passenger counts
+    private void doDestinations(Map<Integer, ArrayList<Serializable>> sourceElevs, Integer key, int currFloor) {
+        int passengers = Collections.frequency(destFloors.get(key), currFloor);
+        elevatorPassengers.put(key, elevatorPassengers.get(key) - passengers);
+        requestsDone += passengers;
+        System.out.println("Elevator " + key + " dropped " + passengers + " passengers");
+        System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
 
-        Integer selectedElevatorID = null;
-        int minDistance = Integer.MAX_VALUE;
-
-        for (Map.Entry<Integer, ArrayList<Serializable>> entry : elevators.entrySet()) {
-            if (!entry.getKey().equals(currentElevatorID)) {
-                int currentFloor = (int) entry.getValue().get(2); // current floor
-                int passengerCount = currentPassengerCounts.get(entry.getKey()); // Get the passenger count using the entry's key (elevator ID)
-
-                int distanceToSourceFloor = Math.abs(currentFloor - sourceFloor);
-
-                if (passengerCount < maxPassengers && distanceToSourceFloor < minDistance) {
-                    minDistance = distanceToSourceFloor;
-                    selectedElevatorID = entry.getKey();
-                }
-            }
-        }
-
-        return selectedElevatorID;
-    }
-
-
-
-    /**
-     * Reassigns a pickup request to a different elevator. Adds the source floor to the new elevator's queue of source floors.
-     *
-     * @param newElevatorID The ID of the new elevator to which the request is being reassigned.
-     * @param sourceFloor   The floor where the pickup request is made.
-     */
-    private void reassignPickupRequest(Integer newElevatorID, Integer sourceFloor) {
-        // Add the source floor to the new elevator's list of floors to visit
-        sourceFloors.get(newElevatorID).add(sourceFloor);
+        destFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
+        System.out.println("Finished " + requestsDone + " requests!");
     }
 
     /**
@@ -313,10 +261,9 @@ public class Scheduler implements Runnable {
         byte[] acknowledged;
         int msgLen;
         DatagramPacket receivePacket;
-        String messageToSend = "";
+
         try {
-            messageToSend = createMessage(elevID, floor, fault);
-            byte[] toSend = HelperFunctions.generateMsg(messageToSend);
+            byte[] toSend = HelperFunctions.generateMsg(createMessage(elevID, floor, fault));
             DatagramPacket destPacket;
             InetAddress ipAddress = (InetAddress) store.getElevators().get(elevID).get(0);
             destPacket = new DatagramPacket(toSend, toSend.length,
@@ -338,7 +285,6 @@ public class Scheduler implements Runnable {
             System.exit(1);
         }
 
-        System.out.println("Sending " + messageToSend + " to Elevator " + elevID);
         msgLen = receivePacket.getLength();
         System.out.println("Scheduler: Destination ACK received:");
         HelperFunctions.printDataInfo(acknowledged, msgLen);
@@ -352,7 +298,7 @@ public class Scheduler implements Runnable {
      * @param direction current direction
      * @return Returns next floor
      */
-    private int findNextClosest(int floor, LinkedList<Integer> srcFloors, LinkedList<Integer> destfloors, String direction) {
+    private int findNextClosest(int floor, LinkedList<Integer> destfloors, LinkedList<Integer> srcFloors, String direction){
         int closest = 23;
         int chosenFloor = 0;
         LinkedList<Integer> combined = new LinkedList<>();
@@ -384,6 +330,7 @@ public class Scheduler implements Runnable {
                 return Collections.min(combined);
             }
         }
+
         return chosenFloor;
     }
 
@@ -392,16 +339,16 @@ public class Scheduler implements Runnable {
      * @param elevID Target elevator
      */
     private void sendToClosest(Integer elevID) throws RemoteException {
-        int currFloor = (int) store.getElevators().get(elevID).get(2);
+        int currentFloor = (int) store.getElevators().get(elevID).get(2);
         if (sourceFloors.get(elevID).isEmpty() && !destFloors.get(elevID).isEmpty())
         {
-            int floorToGo = findNextClosest(currFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
+            int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
 
             sendCommand(elevID, floorToGo, 0);
         }
         else if (!sourceFloors.get(elevID).isEmpty() && destFloors.get(elevID).isEmpty())
         {
-            int floorToGo = findNextClosest(currFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
+            int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
 
             sendCommand(elevID, floorToGo, srcErrorPairs.get(elevID).get(floorToGo));
         }
@@ -413,12 +360,12 @@ public class Scheduler implements Runnable {
         {
             if (lastKnownDirection.get(elevID).equals("UP"))
             {
-                int floorToGo = findNextClosest(currFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
+                int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
                 sendCommand(elevID, floorToGo, srcErrorPairs.get(elevID).getOrDefault(floorToGo, 0));
             }
             else if (lastKnownDirection.get(elevID).equals("DN"))
             {
-                int floorToGo = findNextClosest(currFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
+                int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
 
                 sendCommand(elevID, floorToGo, srcErrorPairs.get(elevID).getOrDefault(floorToGo, 0));
             }
@@ -431,12 +378,10 @@ public class Scheduler implements Runnable {
      * @param sourceFloor The source floor of a request being processed
      * @param destFloor The destination floor of a request being processed
      */
-    public void findClosest(int sourceFloor, int destFloor, int fault) {
+    public void findClosest(int sourceFloor, int destFloor, int fault, int elevatorNotBeingConsidered) {
         Map<Integer, ArrayList<Serializable>> elevators;
-        Map<Integer, Integer> elevatorCaps;
         try {
             elevators = store.getElevators();
-            elevatorCaps = store.getPassengerCounts();
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
@@ -452,7 +397,7 @@ public class Scheduler implements Runnable {
             for (Integer key: elevators.keySet())
             {
                 ArrayList<Serializable> beingChecked = elevators.get(key);
-                if ((int) beingChecked.get(3) == 0 && (int) beingChecked.get(2) <= sourceFloor && elevatorCaps.get(key) < 5)
+                if ((int) beingChecked.get(3) == 0 && (int) beingChecked.get(2) <= sourceFloor && key != elevatorNotBeingConsidered)
                 {
                     int tempCheck = (int) elevators.get(key).get(2) - sourceFloor;
                     if (tempCheck < check) {
@@ -467,7 +412,7 @@ public class Scheduler implements Runnable {
                 for (Integer key: elevators.keySet())
                 {
                     ArrayList<Serializable> beingChecked = elevators.get(key);
-                    if ((int) beingChecked.get(3) == 0 && (int) beingChecked.get(2) > sourceFloor && elevatorCaps.get(key) < 5)
+                    if ((int) beingChecked.get(3) == 0 && (int) beingChecked.get(2) > sourceFloor && key != elevatorNotBeingConsidered)
                     {
                         int tempCheck = Math.abs((int) elevators.get(key).get(2) - sourceFloor);
                         if (tempCheck < check) {
@@ -485,7 +430,7 @@ public class Scheduler implements Runnable {
                 {
 
                     ArrayList<Serializable> beingChecked = elevators.get(key);
-                    if ((int) beingChecked.get(3) == 1 && (int) beingChecked.get(2) < sourceFloor && (int) beingChecked.get(4) > sourceFloor && elevatorCaps.get(key) < 5)
+                    if ((int) beingChecked.get(3) == 1 && (int) beingChecked.get(2) < sourceFloor && (int) beingChecked.get(4) > sourceFloor && key != elevatorNotBeingConsidered)
                     {
                         if(closestSoFar > (sourceFloor - (int) elevators.get(key).get(2))){
                             closestSoFar = sourceFloor - (int) elevators.get(key).get(2);
@@ -500,17 +445,15 @@ public class Scheduler implements Runnable {
                 int closestHighest = 100;
                 for (Integer key: elevators.keySet())
                 {
-
-                    //ArrayList<Serializable> beingChecked = elevators.get(key);
-                    if (!srcDestPairs.get(key).isEmpty())
+                    int largestDestination;
+                    List<Integer> destinations = srcDestPairs.get(key).values().stream().flatMap(LinkedList::stream).toList();
+                    if (destinations.isEmpty()) destinations = destFloors.get(key);
+                    if (destinations.isEmpty())  largestDestination = 0;
+                    else largestDestination = Collections.max(destinations);
+                    if (Math.abs(largestDestination - sourceFloor) <  closestHighest && key != elevatorNotBeingConsidered)
                     {
-                        List<Integer> destinations = srcDestPairs.get(key).values().stream().flatMap(LinkedList::stream).toList();
-                        int largestDestination = Collections.max(destinations);
-                        if (Math.abs(largestDestination - sourceFloor) <  closestHighest && elevatorCaps.get(key) < 5)
-                        {
-                            closestHighest = Math.abs(largestDestination - sourceFloor);
-                            closestID = key;
-                        }
+                        closestHighest = Math.abs(largestDestination - sourceFloor);
+                        closestID = key;
                     }
                 }
             }
@@ -522,7 +465,7 @@ public class Scheduler implements Runnable {
             for (Integer key: elevators.keySet())
             {
                 ArrayList<Serializable> beingChecked = elevators.get(key);
-                if ((int) beingChecked.get(3) == 0 && destFloors.get(key).isEmpty() && (int) beingChecked.get(2) > sourceFloor && elevatorCaps.get(key) < 5)
+                if ((int) beingChecked.get(3) == 0 && destFloors.get(key).isEmpty() && (int) beingChecked.get(2) > sourceFloor && key != elevatorNotBeingConsidered)
                 {
                     if(sourceFloor - (int) beingChecked.get(2) < shortestDistance){
                         closestID = key;
@@ -537,7 +480,7 @@ public class Scheduler implements Runnable {
                 for(Integer key: elevators.keySet()){
 
                     ArrayList<Serializable> beingChecked = elevators.get(key);
-                    if ((int) beingChecked.get(3) == 0 && destFloors.get(key).isEmpty() && (int) beingChecked.get(2) < sourceFloor && elevatorCaps.get(key) < 5)
+                    if ((int) beingChecked.get(3) == 0 && destFloors.get(key).isEmpty() && (int) beingChecked.get(2) < sourceFloor && key != elevatorNotBeingConsidered)
                     {
                         if((int) beingChecked.get(2) - sourceFloor < shortestDistance){
                             closestID = key;
@@ -553,7 +496,7 @@ public class Scheduler implements Runnable {
                 for (Integer key: elevators.keySet())
                 {
                     ArrayList<Serializable> beingChecked = elevators.get(key);
-                    if ((int) beingChecked.get(3) == 2 && (int) beingChecked.get(2) > sourceFloor && (int) beingChecked.get(4) < sourceFloor && elevatorCaps.get(key) < 5)
+                    if ((int) beingChecked.get(3) == 2 && (int) beingChecked.get(2) > sourceFloor && (int) beingChecked.get(4) < sourceFloor && key != elevatorNotBeingConsidered)
                     {
                         if(closestSoFar > ((int) elevators.get(key).get(2) - sourceFloor)){
                             closestSoFar = (int) elevators.get(key).get(2) - sourceFloor;
@@ -570,21 +513,19 @@ public class Scheduler implements Runnable {
                 for (Integer key: elevators.keySet())
                 {
                     //ArrayList<Serializable> beingChecked = elevators.get(key);
-                    if (!srcDestPairs.get(key).isEmpty())
+                    int largestDestination;
+                    List<Integer> destinations = srcDestPairs.get(key).values().stream().flatMap(LinkedList::stream).toList();
+                    if (destinations.isEmpty()) destinations = destFloors.get(key);
+                    if (destinations.isEmpty()) largestDestination = 0;
+                    else largestDestination = Collections.max(destinations);
+                    if (Math.abs(largestDestination - sourceFloor) <  closestHighest && key != elevatorNotBeingConsidered)
                     {
-                        List<Integer> destinations = srcDestPairs.get(key).values().stream().flatMap(LinkedList::stream).toList();
-                        int largestDestination = 0;
-                        if (!destinations.isEmpty()) largestDestination = Collections.max(destinations);
-                        if (Math.abs(largestDestination - sourceFloor) <  closestHighest && elevatorCaps.get(key) < 5)
-                        {
-                            closestHighest = Math.abs(largestDestination - sourceFloor);
-                            closestID = key;
-                        }
+                        closestHighest = Math.abs(largestDestination - sourceFloor);
+                        closestID = key;
                     }
                 }
             }
         }
-
 
         sourceFloors.get(closestID).add(sourceFloor);
         if (srcDestPairs.get(closestID).containsKey(sourceFloor)) srcDestPairs.get(closestID).get(sourceFloor).add(destFloor);
