@@ -151,6 +151,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
     {
         try{
             String message = store.receiveLog();
+
         } catch (RemoteException e) {
             throw new RuntimeException(e);
         }
