@@ -58,6 +58,7 @@ public class SchedulerReceiver implements Runnable {
 
                         // Store the event
                         store.setFloorRequest(event);
+
                     }
                 }else if (translatedMessage.startsWith("02")) { // IEXIST message
                     int elevatorID = Integer.parseInt(translatedMessage.substring(2, translatedMessage.length() - 1));
@@ -88,8 +89,13 @@ public class SchedulerReceiver implements Runnable {
                             int currentFloor = Integer.parseInt(parts[2]);
                             store.updateElevator(elevatorID, 2, currentFloor);
                             store.updateElevator(elevatorID, 3, 3); //3 = out of order
+
+                        }
                     }
                 }
+                else if (translatedMessage.startsWith("05")){
+                    String message = translatedMessage.substring(2);
+                    store.addLog(message);
                 }
                 else
                 {
