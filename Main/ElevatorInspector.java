@@ -2,7 +2,8 @@
  * Represent the GUI interface for the elevator subsystem
  * @author Marwan Zeid
  * @author Garrison Su
- * @version 2024-04-06
+ * @author Eric ???
+ * @version 2024-04-07
  */
 
 
@@ -15,10 +16,15 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.io.Serializable;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.EventObject;
 import javax.swing.table.DefaultTableCellRenderer;
+import java.lang.Integer;
+import java.lang.String;
+import java.util.Map;
 
 public class ElevatorInspector extends JFrame implements Runnable {
     private static ElevatorInspector instance;
@@ -30,6 +36,8 @@ public class ElevatorInspector extends JFrame implements Runnable {
     JTextArea elev2TextArea;
     JTextArea elev3TextArea;
     JTextArea elev4TextArea;
+    JTextArea SchedulerTextArea;
+
 //    public void moveElevatorGUI(int elevatorId, int floor) {
 //        DefaultTableModel model = (DefaultTableModel) elevatorTable.getModel();
 //        for (int i = 0; i < model.getRowCount(); i++) {
@@ -54,7 +62,12 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elev2TextArea = new JTextArea();
         elev3TextArea = new JTextArea();
         elev4TextArea = new JTextArea();
+        SchedulerTextArea = new JTextArea();
+
         Border border = BorderFactory.createLineBorder(Color.BLACK);
+        SchedulerTextArea.setBorder(BorderFactory.createCompoundBorder(border,
+                BorderFactory.createEmptyBorder(10, 10, 10, 1)));
+
         elev1TextArea.setBorder(BorderFactory.createCompoundBorder(border,
                 BorderFactory.createEmptyBorder(10, 10, 10, 1)));
         elev2TextArea.setBorder(BorderFactory.createCompoundBorder(border,
@@ -67,6 +80,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elev2TextArea.setPreferredSize(new Dimension(50,100));
         elev3TextArea.setPreferredSize(new Dimension(50,100));
         elev4TextArea.setPreferredSize(new Dimension(50,100));
+        SchedulerTextArea.setPreferredSize(new Dimension(200,400));
 
 
         elev1TextArea.setLineWrap(true);
@@ -77,13 +91,20 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elev3TextArea.setWrapStyleWord(true);
         elev4TextArea.setLineWrap(true);
         elev4TextArea.setWrapStyleWord(true);
+        SchedulerTextArea.setLineWrap(true);
+        SchedulerTextArea.setWrapStyleWord(true);
 
-
+        elev1TextArea.setEditable(false);
+        elev2TextArea.setEditable(false);
+        elev3TextArea.setEditable(false);
+        elev4TextArea.setEditable(false);
+        SchedulerTextArea.setEditable(false);
 //        JTable elevatorTable = new JTable(new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 22));
-
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 0);
         for (int i = 22; i >= 1; i--) {
             model.addRow(new Object[]{null, "", "", "", ""});
+
+
         }
         JTable elevatorTable = new JTable(model);
         this.elevatorTable = elevatorTable;
@@ -112,6 +133,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elevatorTable.getColumnModel().getColumn(0).setCellRenderer(render1);*/
 
         elevatorTable.getColumnModel().getColumn(0).setCellRenderer(new SplitTableCellRenderer());
+        elevatorTable.getTableHeader().setReorderingAllowed(false);
 
         testPanel.setLayout(new GridLayout(4,1));
         testPanel.add(elev1TextArea);
@@ -127,13 +149,14 @@ public class ElevatorInspector extends JFrame implements Runnable {
         gbc.fill = GridBagConstraints.BOTH;
         addObject(testPanel, this, 1,0,1,1, 0.4, 0.4);
         addObject(testPanel2, this, 2,0,1,1, 0.3, 0.4);
-
+        testPanel2.setLayout(new BorderLayout());
+        testPanel2.add(new JScrollPane(SchedulerTextArea), BorderLayout.CENTER);
         //System.out.println(elev2TextArea.getWidth());
         setVisible(true);
         for (int i = 0; i < 22; i++) {
             elevatorTable.getColumnModel().getColumn(0).getCellRenderer().getTableCellRendererComponent(elevatorTable, "test", false, false, i, 0);
             CellPanel panel = (CellPanel) elevatorTable.getValueAt(i, 0);
-            panel.setFloorNumber(Integer.toString(i+1));
+            panel.setFloorNumber(Integer.toString(22-i));
             System.out.println(panel.getFloorNumberText());
         }
         this.repaint();
@@ -151,29 +174,38 @@ public class ElevatorInspector extends JFrame implements Runnable {
     {
         try{
             String message = store.receiveLog();
+            if (!message.isEmpty()) {
+                if (message.contains("Scheduler")) { // Scheduler
+                    updateSchedulerLog(message);
+//                    int semiIndex = message.indexOf(":");
+//                    String messageText = message.substring(semiIndex + 1);
+                }
+                else if(message.contains("Elevator-")){ // Elevator
+//                    int elevatorId = Integer.parseInt(message.substring(message.indexOf("-") + 1));
+                    int elevatorId = Character.getNumericValue(message.charAt(message.indexOf("-")+1));
+                    Map<Integer, ArrayList<Serializable>> allElevators = store.getElevators();
+                    ArrayList<Serializable> currentElevatorInfo = allElevators.get(elevatorId);
+                    int currentFloor = (Integer) currentElevatorInfo.get(2);
+                    int destination = (Integer) currentElevatorInfo.get(3);
+                    destinationColor(elevatorId, destination);
+                    updateElevatorLog(elevatorId, message);
+                    if (message.contains("Error-1")) { // transient error
+                        moveElevatorGUI(elevatorId, currentFloor, 1);
+                    } else if (message.contains("Error-2")) { // hard fault error
+                        moveElevatorGUI(elevatorId, currentFloor, 2);
+                    } else{
+                        moveElevatorGUI(elevatorId, currentFloor, 0);
+                    }
+                } else if (message.contains("all")){
+                    printALlElevators(message);
+                }
+            }
 
         } catch (RemoteException e) {
-            throw new RuntimeException(e);
+            System.out.println("Error in getMessages");
         }
     }
 
-    public void moveElevatorGUI(int elevatorId, int floor, int error) {
-        Color color = switch (error) {
-            case 0 -> Color.GREEN;
-            case 1 -> Color.YELLOW;
-            case 2 -> Color.RED;
-            default -> Color.CYAN; //Nothing used for testing
-        }; // Nothing for error checking
-        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
-        elevatorTable.repaint();
-    }
-
-    public static ElevatorInspector getInstance(SchedulerStoreInt store) {
-        if (instance == null) {
-            instance = new ElevatorInspector(store);
-        }
-        return instance;
-    }
 
     public void updateElevatorLog(int elevatorId, String message) {
         switch (elevatorId) {
@@ -184,6 +216,41 @@ public class ElevatorInspector extends JFrame implements Runnable {
             default-> System.out.println("NOT PRINTING TO GUI");
         }
     }
+
+    public void updateSchedulerLog(String message){
+        SchedulerTextArea.append(message + "\n");
+    }
+    public static ElevatorInspector getInstance(SchedulerStoreInt store) {
+        if (instance == null) {
+            instance = new ElevatorInspector(store);
+        }
+        return instance;
+    }
+    public void printALlElevators(String message){
+        elev1TextArea.append(message + "\n");
+        elev2TextArea.append(message + "\n");
+        elev3TextArea.append(message + "\n");
+        elev4TextArea.append(message + "\n");
+    }
+
+    public void moveElevatorGUI(int elevatorId, int floor, int error) {
+        Color color = switch (error) {
+            case 0 -> Color.GREEN;
+            case 1 -> Color.YELLOW;
+            case 2 -> Color.RED;
+            default -> Color.CYAN; //Nothing used for testing
+        };
+        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
+        elevatorTable.repaint();
+    }
+
+    //Highlight the destination color of elevater it wants to go to
+    public void destinationColor(int elevatorId, int destination) {
+        Color color = Color.blue;
+        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(destination, elevatorId, color));
+        elevatorTable.repaint();
+    }
+
 
     public void addObject(Component component, Container parentContainer, int gridx, int gridy, int gridwidth, int gridheight, double weightx, double weighty){
 
@@ -202,20 +269,14 @@ public class ElevatorInspector extends JFrame implements Runnable {
     public static void main(String[] args) {
         try {
             SchedulerStoreInt store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
-
             ElevatorInspector.getInstance(store).setVisible(true);
             Scheduler scheduler = new Scheduler(store);
-
             Thread schedulerThread = new Thread(scheduler);
             schedulerThread.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-//        new ElevatorInspector();
-
-
     }
-
 }
 
 class SplitTableCellRenderer implements TableCellRenderer {
