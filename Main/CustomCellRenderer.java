@@ -30,6 +30,7 @@ public class CustomCellRenderer extends DefaultTableCellRenderer {
             } else{
                 cellBox.setBackground(Color.yellow);
             }
+            return cellBox;
         }
         if (row == specialRow && column == specialColumn) { //Cell only
                 cellBox.setBackground(color);
