@@ -2,7 +2,7 @@
  * Represent the GUI interface for the elevator subsystem
  * @author Marwan Zeid
  * @author Garrison Su
- * @version 2024-04-06
+ * @version 2024-04-07
  */
 
 
@@ -15,12 +15,15 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.io.Serializable;
 import java.rmi.Naming;
 import java.rmi.RemoteException;
+import java.util.ArrayList;
 import java.util.EventObject;
 import javax.swing.table.DefaultTableCellRenderer;
 import java.lang.Integer;
 import java.lang.String;
+import java.util.Map;
 
 public class ElevatorInspector extends JFrame implements Runnable {
     private static ElevatorInspector instance;
@@ -99,6 +102,8 @@ public class ElevatorInspector extends JFrame implements Runnable {
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 0);
         for (int i = 22; i >= 1; i--) {
             model.addRow(new Object[]{null, "", "", "", ""});
+
+
         }
         JTable elevatorTable = new JTable(model);
         this.elevatorTable = elevatorTable;
@@ -150,7 +155,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         for (int i = 0; i < 22; i++) {
             elevatorTable.getColumnModel().getColumn(0).getCellRenderer().getTableCellRendererComponent(elevatorTable, "test", false, false, i, 0);
             CellPanel panel = (CellPanel) elevatorTable.getValueAt(i, 0);
-            panel.setFloorNumber(Integer.toString(i+1));
+            panel.setFloorNumber(Integer.toString(22-i));
             System.out.println(panel.getFloorNumberText());
         }
         this.repaint();
@@ -169,19 +174,28 @@ public class ElevatorInspector extends JFrame implements Runnable {
         try{
             String message = store.receiveLog();
             if (!message.isEmpty()) {
-                if (message.contains("-")) { // Scheduler
-                    int dashIndex = message.indexOf("-");
-                    String messageText = message.substring(dashIndex + 1);
-                    updateSchedulerLog(messageText);
+                if (message.contains("Scheduler")) { // Scheduler
+                    updateSchedulerLog(message);
+//                    int semiIndex = message.indexOf(":");
+//                    String messageText = message.substring(semiIndex + 1);
                 }
-                else if(message.contains(":")){ // Elevator
-                    int semiIndex = message.indexOf(":");
-                    String messageText =  message.substring(semiIndex);
-                    int elevatorId = Character.getNumericValue(message.charAt(semiIndex + 1));
-                    int floor = Character.getNumericValue(message.charAt(semiIndex + 2));
-                    int error = Character.getNumericValue(message.charAt(semiIndex + 3));
-                    moveElevatorGUI(elevatorId,floor,error);
-                    updateElevatorLog(elevatorId, messageText);
+                else if(message.contains("Elevator-")){ // Elevator
+                    int elevatorId = Integer.parseInt(message.substring(message.lastIndexOf("Elevator-") + 1));
+                    Map<Integer, ArrayList<Serializable>> allElevators = store.getElevators();
+                    ArrayList<Serializable> currentElevatorInfo = allElevators.get(elevatorId);
+                    int currentFloor = (Integer) currentElevatorInfo.get(2);
+
+                    int destination = (Integer) currentElevatorInfo.get(3);
+                    destinationColor(elevatorId, destination);
+
+                    updateElevatorLog(elevatorId, message);
+                    if (message.contains("Error-1")) { // traunset error
+                        moveElevatorGUI(elevatorId, currentFloor, 1);
+                    } else if (message.contains("Error-2")) { // hard fault
+                        moveElevatorGUI(elevatorId, currentFloor, 2);
+                    } else{
+                        moveElevatorGUI(elevatorId, currentFloor, 0);
+                    }
                 } else if (message.contains("all")){
                     printALlElevators(message);
                 }
@@ -224,8 +238,15 @@ public class ElevatorInspector extends JFrame implements Runnable {
             case 1 -> Color.YELLOW;
             case 2 -> Color.RED;
             default -> Color.CYAN; //Nothing used for testing
-        }; // Nothing for error checking
+        };
         elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(22 - floor, elevatorId, color));
+        elevatorTable.repaint();
+    }
+
+    //Highlight the destination color of elevater it wants to go to
+    public void destinationColor(int elevatorId, int destination) {
+        Color color = Color.blue;
+        elevatorTable.getColumnModel().getColumn(elevatorId).setCellRenderer(new CustomCellRenderer(destination, elevatorId, color));
         elevatorTable.repaint();
     }
 
