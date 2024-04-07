@@ -27,7 +27,6 @@ import java.lang.String;
 import java.util.Map;
 
 public class ElevatorInspector extends JFrame implements Runnable {
-    private static ElevatorInspector instance;
     private JTable elevatorTable;
     private SchedulerStoreInt store;
     GridBagLayout layout;
@@ -220,12 +219,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
     public void updateSchedulerLog(String message){
         SchedulerTextArea.append(message + "\n");
     }
-    public static ElevatorInspector getInstance(SchedulerStoreInt store) {
-        if (instance == null) {
-            instance = new ElevatorInspector(store);
-        }
-        return instance;
-    }
+
     public void printALlElevators(String message){
         elev1TextArea.append(message + "\n");
         elev2TextArea.append(message + "\n");
@@ -269,10 +263,8 @@ public class ElevatorInspector extends JFrame implements Runnable {
     public static void main(String[] args) {
         try {
             SchedulerStoreInt store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
-            ElevatorInspector.getInstance(store).setVisible(true);
-            Scheduler scheduler = new Scheduler(store);
-            Thread schedulerThread = new Thread(scheduler);
-            schedulerThread.start();
+            Thread InspectorThread = new Thread(new ElevatorInspector(store));
+            InspectorThread.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

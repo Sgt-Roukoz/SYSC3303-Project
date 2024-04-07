@@ -94,7 +94,7 @@ public class SchedulerReceiver implements Runnable {
                     }
                 }
                 else if (translatedMessage.startsWith("05")){
-                    String message = translatedMessage.substring(2);
+                    String message = translatedMessage.substring(2, translatedMessage.length() - 1);
                     store.addLog(message);
                 }
                 else
