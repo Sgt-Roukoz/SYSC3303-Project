@@ -1,11 +1,15 @@
 package Main;
 
+import org.junit.jupiter.params.shadow.com.univocity.parsers.common.input.LookaheadCharInputReader;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.*;
+import java.time.temporal.ChronoUnit;
 import java.util.Random;
 import java.util.Scanner;
+import java.time.LocalTime;
 
 /**
  * Floor class
@@ -20,6 +24,8 @@ public class Floor implements Runnable{
     private final Random rand;
     private final DatagramSocket sendReceiveSocket;
     private DatagramPacket sendPacket;
+    private LocalTime prevTime;
+    private LocalTime curTime;
 
     public Floor() {
         this.rand = new Random();
@@ -42,10 +48,10 @@ public class Floor implements Runnable{
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
                 this.processInput(line);
-                Thread.sleep(rand.nextInt(3000,6000));
+                prevTime = curTime;
             }
             scanner.close();
-        } catch (FileNotFoundException | InterruptedException e) {
+        } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
     }
@@ -56,6 +62,15 @@ public class Floor implements Runnable{
      */
     public void processInput(String input) {
         String[] split = input.split(" ");
+        curTime = LocalTime.parse(split[0]);
+        if(prevTime != null) {
+            long diff = ChronoUnit.MILLIS.between(prevTime, curTime);
+            try {
+                Thread.sleep(diff);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
         String msg = "01";
         msg += split[1];
         if(split[2].equalsIgnoreCase("UP")) {
