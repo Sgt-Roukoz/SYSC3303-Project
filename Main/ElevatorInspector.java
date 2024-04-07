@@ -209,6 +209,21 @@ public class ElevatorInspector extends JFrame implements Runnable {
                     setTableVal(elevatorId, "");
                     int currentFloor = (Integer) currentElevatorInfo.get(2);
                     int destination = (Integer) currentElevatorInfo.get(4);
+
+                    if  (destination == 0) ;
+                    else if (destination < currentFloor) {
+                        ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).downLampOn();
+                        System.out.println("down lamp on " + destination);
+                    }
+                    else if (destination > currentFloor) {
+                        ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).upLampOn();
+                        System.out.println("up lamp on " + destination);
+                    }
+                    else {
+                        if ((int)currentElevatorInfo.get(3) == 1) ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).upLampOff();
+                        else if ((int)currentElevatorInfo.get(3) == 2) ((CellPanel) elevatorTable.getValueAt(22-destination, 0)).downLampOff();
+                    }
+
                     if ((int)currentElevatorInfo.get(3) != 0) destinationColor(elevatorId, destination);
                     updateElevatorLog(elevatorId, message);
                     if (message.contains("Error-1")) { // transient error
@@ -354,18 +369,26 @@ class CellPanel extends JPanel {
 
     public void upLampOn() {
         upLamp.setBackground(Color.yellow);
+        //upLamp.repaint();
+        //this.repaint();
     }
 
     public void upLampOff() {
         upLamp.setBackground(Color.white);
+        //upLamp.repaint();
+        //this.repaint();
     }
 
     public void downLampOn() {
-        upLamp.setBackground(Color.yellow);
+        downLamp.setBackground(Color.yellow);
+        //downLamp.repaint();
+        //this.repaint();
     }
 
     public void downLampOff() {
-        upLamp.setBackground(Color.white);
+        downLamp.setBackground(Color.white);
+        //downLamp.repaint();
+        //this.repaint();
     }
 
     public void setFloorNumber(String text) {
