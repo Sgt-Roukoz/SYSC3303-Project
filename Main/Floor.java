@@ -47,7 +47,8 @@ public class Floor implements Runnable{
             Scanner scanner = new Scanner(file);
             while (scanner.hasNextLine()) {
                 String line = scanner.nextLine();
-                this.processInput(line);
+                boolean lastLine = !scanner.hasNextLine();
+                this.processInput(line, lastLine);
                 prevTime = curTime;
             }
             scanner.close();
@@ -60,7 +61,7 @@ public class Floor implements Runnable{
      * Processes given string input, sending the appropriate event to the scheduler
      * @param input the given string input to be processed
      */
-    public void processInput(String input) {
+    public void processInput(String input, boolean lastLine) {
         String[] split = input.split(" ");
         curTime = LocalTime.parse(split[0]);
         if(prevTime != null) {

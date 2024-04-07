@@ -19,7 +19,7 @@ class Moving implements ElevatorState {
 
     @Override
     public void floorRequest(Elevator context) {
-        System.out.println("Elevator is moving.");
+        System.out.println("Elevator " + context.getElevatorId() + " is moving.");
     }
 
     @Override

@@ -8,6 +8,7 @@ import java.net.*;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,11 +31,12 @@ public class Scheduler implements Runnable {
     private Map<Integer, LinkedList<Integer>> destFloors;
     private Map<Integer, String> lastKnownDirection;
     private Map<Integer, Map<Integer, LinkedList<Integer>>> srcDestPairs;
-    private  Map<Integer, Map<Integer, Integer>> srcErrorPairs;
+    private  Map<Integer, Map<Integer, Integer>> destErrorPairs;
     private Map<Integer, Integer> elevatorPassengers;
 
     private int requestsDone = 0;
-
+    private int moveRequestsSent = 0;
+    boolean receivedFirst = false;
     /**
      * Scheduler class constructor
      *
@@ -45,18 +47,17 @@ public class Scheduler implements Runnable {
         destFloors = new HashMap<>();
         lastKnownDirection = new HashMap<>();
         srcDestPairs = new HashMap<>();
-        srcErrorPairs = new HashMap<>();
+        destErrorPairs = new HashMap<>();
         elevatorPassengers = new HashMap<>();
 
         try {
             this.store =  store;
             sendReceiveSocket = new DatagramSocket();
             for(Integer i : store.getElevators().keySet()){
-                System.out.println("Elevator Found");
                 sourceFloors.put(i, new LinkedList<>());
                 destFloors.put(i, new LinkedList<>());
                 srcDestPairs.put(i, new HashMap<>());
-                srcErrorPairs.put(i, new HashMap<>());
+                destErrorPairs.put(i, new HashMap<>());
                 elevatorPassengers.put(i, 0);
                 lastKnownDirection.put(i, "IDLE");
             }
@@ -77,7 +78,11 @@ public class Scheduler implements Runnable {
                 checkArrivedAtAnyFloor();
                 readFloorRequest();
                 if (floorRequestToBeProcessed != null) {
-                    System.out.println("Scheduler is processing: " + floorRequestToBeProcessed);
+                    if (!receivedFirst) {
+                        store.setFirstRequest(String.valueOf(new Timestamp((new Date()).getTime())));
+                        receivedFirst = true;
+                    }
+                    store.addLog("Scheduler-1: Scheduler is processing: " + floorRequestToBeProcessed);
                     findClosest(floorRequestToBeProcessed.getSourceFloor(), floorRequestToBeProcessed.getDestFloor(), floorRequestToBeProcessed.getFaultType(), -1);
                 }
 
@@ -102,17 +107,18 @@ public class Scheduler implements Runnable {
                 store.removeElevator(entry.getKey()); // remove elevator from store
                 int destination = (int) entry.getValue().get(4);
                 sourceFloors.remove(entry.getKey()); //remove corresponding sourceFloors queue
-                srcErrorPairs.get(entry.getKey()).put(destination, 0);
+                destErrorPairs.get(entry.getKey()).put(destination, 0);
                 for (Map.Entry<Integer, LinkedList<Integer>> subEntry: srcDestPairs.get(entry.getKey()).entrySet()) //reassign unserviced requests
                 {
                     for (Integer subDest: subEntry.getValue()) {
-                        findClosest(subEntry.getKey(), subDest, srcErrorPairs.get(entry.getKey()).get(subEntry.getKey()), -1); //reassign request
+                        store.addLog("Scheduler-1: Reassigning: " + subEntry.getKey() + " " + subDest + " " + destErrorPairs.get(entry.getKey()).get(subDest));
+                        findClosest(subEntry.getKey(), subDest, destErrorPairs.get(entry.getKey()).get(subDest), -1); //reassign request
                     }
                 }
                 destFloors.remove(entry.getKey()); //remove corresponding destination floors queue
                 srcDestPairs.remove(entry.getKey());
-                srcErrorPairs.remove(entry.getKey());
-                System.out.println("Scheduler removing Elevator " + entry.getKey() + " from scheduling");
+                destErrorPairs.remove(entry.getKey());
+                store.addLog("Scheduler-1: removing Elevator " + entry.getKey() + " from scheduling");
             }
         }
     }
@@ -138,7 +144,7 @@ public class Scheduler implements Runnable {
                 int currFloor = (Integer)sourceElevs.get(key).get(2);
                 if (!sourceFloors.get(key).isEmpty() && contains(sourceFloors.get(key),currFloor)) //is it at a source floor?
                 {
-                    System.out.println("Elevator " + key + " at floor " + sourceElevs.get(key).get(2));
+                    store.addLog("Scheduler-1: Elevator " + key + " at floor " + sourceElevs.get(key).get(2));
                     //is it also a destfloor?
                     if (Collections.frequency(destFloors.get(key), currFloor) > 0)
                     {
@@ -155,8 +161,9 @@ public class Scheduler implements Runnable {
                         }
 
                         // check number of people boarding:
-                        System.out.println("Elevator-" + key + ": " + (estimatedPassengers - elevatorPassengers.get(key) + " passengers boarded"));
+                        store.addLog("Elevator-" + key + ": " + (estimatedPassengers - elevatorPassengers.get(key) + " passengers boarded"));
                         elevatorPassengers.put(key, estimatedPassengers);
+                        store.updateElevator(key, 5, estimatedPassengers);
                         if (!srcDestPairs.get(key).get(currFloor).isEmpty()) //if requests remain, reassign them
                         {
                             while (!srcDestPairs.get(key).get(currFloor).isEmpty())
@@ -169,7 +176,7 @@ public class Scheduler implements Runnable {
                     }
                     else //if elevator is full, "press the button again" aka reassign requests
                     {
-                        System.out.println("Elevator " + key + " is full! Reassigning");
+                        store.addLog("Scheduler-1: Elevator " + key + " is full! Reassigning");
                         if (!srcDestPairs.get(key).get(currFloor).isEmpty())
                         {
                             while (!srcDestPairs.get(key).get(currFloor).isEmpty())
@@ -181,17 +188,17 @@ public class Scheduler implements Runnable {
                     }
                     srcDestPairs.get(key).remove((Integer)sourceElevs.get(key).get(2));
 
-                    System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
-                    System.out.println("Destination now contains: " + destFloors.get(key));
+                    store.addLog("Elevator-" + key + ": now has " + elevatorPassengers.get(key) + " passengers");
+                    store.addLog("Scheduler-1: Destination now contains: " + destFloors.get(key));
 
                     //destFloors.get(key).addAll(srcDestPairs.get(key).get((Integer) sourceElevs.get(key).get(2)));
                     sourceFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
-                    srcErrorPairs.get(key).remove(sourceElevs.get(key).get(2)); //remove the error pair
+
                     Thread.sleep(10);
                     sendToClosest(key);
                 } else if (!destFloors.get(key).isEmpty() && contains(destFloors.get(key),(Integer)sourceElevs.get(key).get(2))) //is it at a destination floor?
                 {
-                    System.out.println("Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
+                    store.addLog("Scheduler-1: Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
 
                     doDestinations(sourceElevs, key, currFloor);
                     Thread.sleep(10);
@@ -201,15 +208,17 @@ public class Scheduler implements Runnable {
         }
     }
 
-    private void doDestinations(Map<Integer, ArrayList<Serializable>> sourceElevs, Integer key, int currFloor) {
+    private void doDestinations(Map<Integer, ArrayList<Serializable>> sourceElevs, Integer key, int currFloor) throws RemoteException {
         int passengers = Collections.frequency(destFloors.get(key), currFloor);
         elevatorPassengers.put(key, elevatorPassengers.get(key) - passengers);
+        store.updateElevator(key, 5, elevatorPassengers.get(key));
         requestsDone += passengers;
-        System.out.println("Elevator " + key + " dropped " + passengers + " passengers");
-        System.out.println("Elevator " + key + " now has " + elevatorPassengers.get(key) + " passengers");
-
+        store.setPassengersServiced(requestsDone);
+        store.addLog("Elevator-" + key + ": dropped " + passengers + " passengers");
+        store.addLog("Elevator-" + key + ": now has " + elevatorPassengers.get(key) + " passengers");
+        destErrorPairs.get(key).remove(sourceElevs.get(key).get(2)); //remove the error pair
         destFloors.get(key).removeAll((Collections.singleton(sourceElevs.get(key).get(2))));
-        System.out.println("Finished " + requestsDone + " requests!");
+        store.addLog("Scheduler-1: Finished " + requestsDone + " requests!");
     }
 
     /**
@@ -344,13 +353,15 @@ public class Scheduler implements Runnable {
         {
             int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
 
-            sendCommand(elevID, floorToGo, 0);
+            sendCommand(elevID, floorToGo, destErrorPairs.get(elevID).get(floorToGo));
+            moveRequestsSent++;
         }
         else if (!sourceFloors.get(elevID).isEmpty() && destFloors.get(elevID).isEmpty())
         {
             int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
 
-            sendCommand(elevID, floorToGo, srcErrorPairs.get(elevID).get(floorToGo));
+            sendCommand(elevID, floorToGo, 0);
+            moveRequestsSent++;
         }
         else if (sourceFloors.get(elevID).isEmpty() && destFloors.get(elevID).isEmpty())
         {
@@ -361,15 +372,18 @@ public class Scheduler implements Runnable {
             if (lastKnownDirection.get(elevID).equals("UP"))
             {
                 int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
-                sendCommand(elevID, floorToGo, srcErrorPairs.get(elevID).getOrDefault(floorToGo, 0));
+                sendCommand(elevID, floorToGo, destErrorPairs.get(elevID).getOrDefault(floorToGo, 0));
             }
             else if (lastKnownDirection.get(elevID).equals("DN"))
             {
                 int floorToGo = findNextClosest(currentFloor, sourceFloors.get(elevID), destFloors.get(elevID), lastKnownDirection.get(elevID));
 
-                sendCommand(elevID, floorToGo, srcErrorPairs.get(elevID).getOrDefault(floorToGo, 0));
+                sendCommand(elevID, floorToGo, destErrorPairs.get(elevID).getOrDefault(floorToGo, 0));
             }
+            moveRequestsSent++;
         }
+        store.addLog("Scheduler-1: Total move requests sent: " + moveRequestsSent);
+        store.setMovesDone(moveRequestsSent);
     }
 
     /**
@@ -535,7 +549,7 @@ public class Scheduler implements Runnable {
             srcDestPairs.get(closestID).get(sourceFloor).add(destFloor);
         }
 
-        srcErrorPairs.get(closestID).put(sourceFloor, fault); //place holder for error value in floor request
+        destErrorPairs.get(closestID).put(destFloor, fault); //place holder for error value in floor request
 
         if ((int) elevators.get(closestID).get(3) == 0)
         {

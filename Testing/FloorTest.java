@@ -34,12 +34,12 @@ class FloorTest {
     @Test
     void processInput(){
         //make scheduler receiver for testing
-        ElevatorEvent elevatorTest = new ElevatorEvent("00:00", 2, ELEVATOR_BUTTON.UP, 4, 0);
+        ElevatorEvent elevatorTest = new ElevatorEvent("00:00", 2, ELEVATOR_BUTTON.UP, 4, 0, false);
         Floor testingFloor = new Floor();
         Thread receiveThred = new Thread(receiver);
         receiveThred.start();
 
-        testingFloor.processInput("14:05:15.0 2 UP 4 0");
+        testingFloor.processInput("14:05:15.0 2 UP 4 0", false);
 
         Assertions.assertEquals(store.getFloorRequest().toString(), elevatorTest.toString());
 

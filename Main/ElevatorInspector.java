@@ -37,15 +37,14 @@ public class ElevatorInspector extends JFrame implements Runnable {
     JTextArea elev3TextArea;
     JTextArea elev4TextArea;
     JTextArea SchedulerTextArea;
-
-//    public void moveElevatorGUI(int elevatorId, int floor) {
-//        DefaultTableModel model = (DefaultTableModel) elevatorTable.getModel();
-//        for (int i = 0; i < model.getRowCount(); i++) {
-//            model.setValueAt("", i, elevatorId);
-//
-//        }
-//        model.setValueAt("TESTING", 22 - floor, elevatorId); //floor 1 = index
-//    }
+    JTextField elev1Pass;
+    JTextField elev2Pass;
+    JTextField elev3Pass;
+    JTextField elev4Pass;
+    JTextField requestsDone;
+    JTextField firstRequest;
+    JTextField lastRequest;
+    JTextField totalMoves;
 
     public ElevatorInspector(SchedulerStoreInt store)
     {
@@ -54,7 +53,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         this.gbc = new GridBagConstraints();
         this.store = store;
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1200, 900);
+        setSize(1260, 900);
         setResizable(false);
         setLayout(layout);
 
@@ -63,6 +62,14 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elev3TextArea = new JTextArea();
         elev4TextArea = new JTextArea();
         SchedulerTextArea = new JTextArea();
+        elev1Pass = new JTextField("", 10);
+        elev2Pass = new JTextField("", 10);
+        elev3Pass = new JTextField("", 10);
+        elev4Pass = new JTextField("", 10);
+        requestsDone = new JTextField("", 10);
+        firstRequest = new JTextField("", 10);
+        lastRequest = new JTextField("", 10);
+        totalMoves = new JTextField("", 10);
 
         Border border = BorderFactory.createLineBorder(Color.BLACK);
         SchedulerTextArea.setBorder(BorderFactory.createCompoundBorder(border,
@@ -76,10 +83,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
                 BorderFactory.createEmptyBorder(10, 1, 1, 10)));
         elev4TextArea.setBorder(BorderFactory.createCompoundBorder(border,
                 BorderFactory.createEmptyBorder(10, 1, 10, 10)));
-        elev1TextArea.setPreferredSize(new Dimension(50,100));
-        elev2TextArea.setPreferredSize(new Dimension(50,100));
-        elev3TextArea.setPreferredSize(new Dimension(50,100));
-        elev4TextArea.setPreferredSize(new Dimension(50,100));
+
         SchedulerTextArea.setPreferredSize(new Dimension(200,400));
 
 
@@ -99,6 +103,15 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elev3TextArea.setEditable(false);
         elev4TextArea.setEditable(false);
         SchedulerTextArea.setEditable(false);
+        elev1Pass.setEditable(false);
+        elev2Pass.setEditable(false);
+        elev3Pass.setEditable(false);
+        elev4Pass.setEditable(false);
+        requestsDone.setEditable(false);
+        firstRequest.setEditable(false);
+        lastRequest.setEditable(false);
+        totalMoves.setEditable(false);
+
 //        JTable elevatorTable = new JTable(new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 22));
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 0);
         for (int i = 22; i >= 1; i--) {
@@ -148,10 +161,25 @@ public class ElevatorInspector extends JFrame implements Runnable {
         caret3.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
         DefaultCaret caret4 = (DefaultCaret)elev4TextArea.getCaret();
         caret4.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-        testPanel.add(elev1TextArea);
-        testPanel.add(elev2TextArea);
-        testPanel.add(elev3TextArea);
-        testPanel.add(elev4TextArea);
+        DefaultCaret caret5 = (DefaultCaret)SchedulerTextArea.getCaret();
+        caret5.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+        JScrollPane scrollElev1 = new JScrollPane(elev1TextArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane scrollElev2 = new JScrollPane(elev2TextArea);
+        JScrollPane scrollElev3 = new JScrollPane(elev3TextArea);
+        JScrollPane scrollElev4 = new JScrollPane(elev4TextArea);
+        JScrollPane scrollSched = new JScrollPane(SchedulerTextArea, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollElev1.setPreferredSize(new Dimension(50,100));
+        scrollElev2.setPreferredSize(new Dimension(50,100));
+        scrollElev3.setPreferredSize(new Dimension(50,100));
+        scrollElev4.setPreferredSize(new Dimension(50,100));
+        scrollSched.setPreferredSize(new Dimension(200,100));
+
+        testPanel.add(scrollElev1);
+        testPanel.add(scrollElev2);
+        testPanel.add(scrollElev3);
+        testPanel.add(scrollElev4);
+        //(new JLabel("elev pass")).setLabelFor(elev1Pass);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Elevator Panel"));
         testPanel.setBorder(BorderFactory.createTitledBorder("Elevator Logs"));
         testPanel2.setBorder(BorderFactory.createTitledBorder("Control Panel"));
@@ -159,10 +187,60 @@ public class ElevatorInspector extends JFrame implements Runnable {
         addObject(scrollPane, this, 0,0,1,1, 0.11, 0.224);
         gbc.insets = new Insets(0, 0, 0, 0);
         gbc.fill = GridBagConstraints.BOTH;
-        addObject(testPanel, this, 1,0,1,1, 0.4, 0.4);
-        addObject(testPanel2, this, 2,0,1,1, 0.1, 0.4);
-        testPanel2.setLayout(new BorderLayout());
-        testPanel2.add(new JScrollPane(SchedulerTextArea), BorderLayout.CENTER);
+        addObject(testPanel, this, 1,0,1,1, 0.36, 0.4);
+        addObject(testPanel2, this, 2,0,1,1, 0.125, 0.4);
+        testPanel2.setLayout(new GridLayout(2,1));
+        testPanel2.add(scrollSched);
+
+
+        JPanel numberFields = new JPanel(new GridLayout(4,2));
+
+        JPanel elev1Panel = new JPanel(new FlowLayout());
+        elev1Panel.add(new JLabel("<html>Elevator 1 Passengers:</html>"));
+        elev1Panel.add(elev1Pass);
+        //elev1Pass.setPreferredSize(new Dimension(10,elev1Pass.getHeight()));
+        numberFields.add(elev1Panel);
+        JPanel elev2Panel = new JPanel(new FlowLayout());
+        elev2Panel.add(new JLabel("<html>Elevator 2 Passengers:</html>"));
+        elev2Panel.add(elev2Pass);
+        numberFields.add(elev2Panel);
+        JPanel elev3Panel = new JPanel(new FlowLayout());
+        elev3Panel.add(new JLabel("<html>Elevator 3 Passengers:</html>"));
+        elev3Panel.add(elev3Pass);
+        numberFields.add(elev3Panel);
+        JPanel elev4Panel = new JPanel(new FlowLayout());
+        elev4Panel.add(new JLabel("<html>Elevator 4 Passengers:</html>"));
+        elev4Panel.add(elev4Pass);
+        numberFields.add(elev4Panel);
+        JPanel requestsPanel = new JPanel(new FlowLayout());
+        requestsPanel.add(new JLabel("<html>Requests Done:</html>"));
+        requestsPanel.add(requestsDone);
+        numberFields.add(requestsPanel);
+        JPanel movesPanel = new JPanel(new FlowLayout());
+        movesPanel.add(new JLabel("<html>Total Moves:</html>"));
+        movesPanel.add(totalMoves);
+        numberFields.add(movesPanel);
+        JPanel firstReqPanel = new JPanel(new FlowLayout());
+        firstReqPanel.add(new JLabel("<html>First Request:</html>"));
+        firstReqPanel.add(firstRequest);
+        numberFields.add(firstReqPanel);
+        JPanel lastReqPanel = new JPanel(new FlowLayout());
+        lastReqPanel.add(new JLabel("<html>Last Request:</html>"));
+        lastReqPanel.add(lastRequest);
+        numberFields.add(lastReqPanel);
+        elev1Pass.setText("0");
+        elev2Pass.setText("0");
+        elev3Pass.setText("0");
+        elev4Pass.setText("0");
+        requestsDone.setText("0");
+        totalMoves.setText("0");
+        firstRequest.setText("0");
+        lastRequest.setText("0");
+
+        //numberFields.set
+        testPanel2.add(numberFields);
+        numberFields.setPreferredSize(new Dimension(testPanel2.getWidth(), testPanel2.getHeight()/2));
+
         //System.out.println(elev2TextArea.getWidth());
         setVisible(true);
         for (int i = 0; i < 22; i++) {
@@ -185,9 +263,19 @@ public class ElevatorInspector extends JFrame implements Runnable {
     private void setTableVal(int col, String val)
     {
             for (int row = 0; row < elevatorTable.getRowCount(); row++) {
-                if (!elevatorTable.getValueAt(row, col).equals("*")) elevatorTable.setValueAt(val, row, col);
+                if (!elevatorTable.getValueAt(row, col).equals("*"))
+                    elevatorTable.setValueAt(val, row, col);
             }
     }
+
+//    private void updateFloorLamps()
+//    {
+//        for (int row = 0; row < 23; row++)
+//        {
+//            elevatorTable.getColumn(0).getCellRenderer().
+//        }
+//    }
+
 
 
     private void getMessages()
@@ -206,7 +294,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
                     int elevatorId = Character.getNumericValue(message.charAt(message.indexOf("-")+1));
                     Map<Integer, ArrayList<Serializable>> allElevators = store.getElevators();
                     ArrayList<Serializable> currentElevatorInfo = allElevators.get(elevatorId);
-                    setTableVal(elevatorId, "");
+                    if (!message.contains("opening") & !message.contains("closing")) setTableVal(elevatorId, "");
                     int currentFloor = (Integer) currentElevatorInfo.get(2);
                     int destination = (Integer) currentElevatorInfo.get(4);
 
@@ -236,6 +324,18 @@ public class ElevatorInspector extends JFrame implements Runnable {
                 } else if (message.contains("all")){
                     printALlElevators(message);
                 }
+                firstRequest.setText(store.getFirstRequest());
+                lastRequest.setText(store.getLastRequest());
+                requestsDone.setText(String.valueOf(store.getPassengersServiced()));
+                totalMoves.setText(String.valueOf(store.getMovesDone()));
+                if (!store.getElevators().isEmpty())
+                {
+                    if (store.getElevators().get(1) != null) elev1Pass.setText(store.getElevators().get(1).get(5).toString());
+                    if (store.getElevators().get(2) != null)elev2Pass.setText(store.getElevators().get(2).get(5).toString());
+                    if (store.getElevators().get(3) != null)elev3Pass.setText(store.getElevators().get(3).get(5).toString());
+                    if (store.getElevators().get(4) != null)elev4Pass.setText(store.getElevators().get(4).get(5).toString());
+                }
+
             }
 
         } catch (RemoteException e) {
@@ -369,13 +469,13 @@ class CellPanel extends JPanel {
 
     public void upLampOn() {
         upLamp.setBackground(Color.yellow);
-        //upLamp.repaint();
+        //upLamp.update();
         //this.repaint();
     }
 
     public void upLampOff() {
         upLamp.setBackground(Color.white);
-        //upLamp.repaint();
+        upLamp.updateUI();
         //this.repaint();
     }
 

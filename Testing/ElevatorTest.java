@@ -81,11 +81,72 @@ class ElevatorTest {
         System.out.println("Test Moving State");
         Assertions.assertEquals("Moving", testingElevator.getCurrentState());
 
-        Thread.sleep(3050); // wait for elevator to move to floor
+        Thread.sleep(Elevator.TIME_PER_FLOOR + 50); // wait for elevator to move to floor
         System.out.println("Test Loading State");
         Assertions.assertEquals("LoadingUnloading", testingElevator.getCurrentState());
         elevThread.interrupt();
+    }
 
+    /**
+     * Tests injecting a transient fault into elevator
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Test
+    void testTransientFault() throws IOException, InterruptedException
+    {
+        SchedulerStoreInt store;
+        try {
+            store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
+        } catch (NotBoundException | ConnectException e) {
+            store = new SchedulerStore();
+        }
+
+        Thread receiver = new Thread(new SchedulerReceiver(store));
+        receiver.start();
+        Thread elevThread = new Thread(testingElevator);
+        elevThread.start();
+
+        byte[] testMessage = "03UP,02,10".getBytes();
+        Thread.sleep(25);
+        InetAddress address = (InetAddress) store.getElevators().get(1).get(0);
+        int port = (int) store.getElevators().get(1).get(1);
+        DatagramPacket testPacket = new DatagramPacket(testMessage, testMessage.length, address, port);
+        DatagramSocket socket = new DatagramSocket();
+        socket.send(testPacket);
+        Thread.sleep(25);
+        Assertions.assertTrue(testingElevator.getTransientFault());
+    }
+
+    /**
+     * Tests injecting a hard fault into an elevator
+     * @throws IOException
+     * @throws InterruptedException
+     */
+    @Test
+    void testHardFault() throws IOException, InterruptedException
+    {
+        SchedulerStoreInt store;
+        try {
+            store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
+        } catch (NotBoundException | ConnectException e) {
+            store = new SchedulerStore();
+        }
+
+        Thread receiver = new Thread(new SchedulerReceiver(store));
+        receiver.start();
+        Thread elevThread = new Thread(testingElevator);
+        elevThread.start();
+
+        byte[] testMessage = "03UP,02,20".getBytes();
+        Thread.sleep(25);
+        InetAddress address = (InetAddress) store.getElevators().get(1).get(0);
+        int port = (int) store.getElevators().get(1).get(1);
+        DatagramPacket testPacket = new DatagramPacket(testMessage, testMessage.length, address, port);
+        DatagramSocket socket = new DatagramSocket();
+        socket.send(testPacket);
+        Thread.sleep(25);
+        Assertions.assertTrue(testingElevator.getHardFault());
     }
 
 }

@@ -21,7 +21,10 @@ public class SchedulerStore extends UnicastRemoteObject implements SchedulerStor
     // destination is 0 if none (idle) and some floor number if not.
 
     private ArrayDeque<String> messageLog;
-
+    private int passengersServiced = 0;
+    private int totalMoves = 0;
+    private String firstRequestStamp = "";
+    private String lastRequestStamp = "";
 
     /**
      * Constructor for SchedulerStore
@@ -122,6 +125,46 @@ public class SchedulerStore extends UnicastRemoteObject implements SchedulerStor
         }
 
         return messageLog.remove();
+    }
+
+    @Override
+    public void setPassengersServiced(int requests) throws RemoteException {
+        passengersServiced = requests;
+    }
+
+    @Override
+    public void setMovesDone(int requests) throws RemoteException {
+        totalMoves = requests;
+    }
+
+    @Override
+    public void setFirstRequest(String time) throws RemoteException {
+        firstRequestStamp = time;
+    }
+
+    @Override
+    public void setLastRequest(String time) throws RemoteException {
+        lastRequestStamp = time;
+    }
+
+    @Override
+    public int getPassengersServiced() throws RemoteException {
+        return passengersServiced;
+    }
+
+    @Override
+    public int getMovesDone() throws RemoteException {
+        return totalMoves;
+    }
+
+    @Override
+    public String getFirstRequest() throws RemoteException {
+        return firstRequestStamp;
+    }
+
+    @Override
+    public String getLastRequest() throws RemoteException {
+        return lastRequestStamp;
     }
 
     // In SchedulerStore.java
