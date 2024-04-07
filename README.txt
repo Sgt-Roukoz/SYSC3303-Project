@@ -26,7 +26,7 @@ Click Open and select L2G6_milestone_5 project folder inside the extracted folde
 
 To run this, you must run each subsystem in a specific order by pressing the green run button next to each of their main
 methods.
-The order is: SchedulerReciever, Elevator, Scheduler, ElevatorInspector and Floor.
+The order is: SchedulerReciever, ElevatorInspector, Elevator, Scheduler, and Floor.
 Any other order will cause errors, as SchedulerStore is set up in Receiver, and for floor requests to do anything, elevators must be accounted for
 
 Testing Instructions
@@ -40,7 +40,7 @@ All system files (21)
     Elevator.java - Class file holding the Elevator Subsystem of the simulation
     ELEVATOR_BUTTON.java - File holding an ENUM representing various button states for elevator
     ElevatorEvent.java - Class used to encapsulate the information required by floor events
-    ElevatorInspector - File with classes used to implement GUI
+    ElevatorInspector.java - File with classes used to implement GUI
     ElevatorState.java - Interface for Elevator States
     Floor.java - Class file holding the Floor Subsystem of the simulation
     HelperFunctions.java - Helper functions, mainly for string and byte[] messages

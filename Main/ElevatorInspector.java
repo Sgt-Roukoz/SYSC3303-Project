@@ -91,9 +91,8 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elev4TextArea.setBorder(BorderFactory.createCompoundBorder(border,
                 BorderFactory.createEmptyBorder(10, 1, 10, 10)));
 
-        //SchedulerTextArea.setPreferredSize(new Dimension(200,400));
 
-
+        //setting up editability of components
         elev1TextArea.setLineWrap(true);
         elev1TextArea.setWrapStyleWord(true);
         elev2TextArea.setLineWrap(true);
@@ -119,6 +118,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         lastRequest.setEditable(false);
         totalMoves.setEditable(false);
 
+        //setting up elevator table
         DefaultTableModel model = new DefaultTableModel(new Object[]{"Floor", "Elevator 1", "Elevator 2", "Elevator 3", "Elevator 4"}, 0);
         for (int i = 22; i >= 1; i--) {
             model.addRow(new Object[]{null, "", "", "", ""});
@@ -152,6 +152,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
         elevatorTable.getColumnModel().getColumn(0).setCellRenderer(new SplitTableCellRenderer());
         elevatorTable.getTableHeader().setReorderingAllowed(false);
 
+        // setting up text area auto scroll
         testPanel.setLayout(new GridLayout(4,1));
         DefaultCaret caret = (DefaultCaret)elev1TextArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
@@ -195,6 +196,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
 
         JPanel numberFields = new JPanel(new GridLayout(4,2));
 
+        //adding textfields for various statistics
         JPanel elev1Panel = new JPanel(new FlowLayout());
         elev1Panel.add(new JLabel("<html>Elevator 1 Passengers:</html>"));
         elev1Panel.add(elev1Pass);
@@ -247,7 +249,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
             elevatorTable.getColumnModel().getColumn(0).getCellRenderer().getTableCellRendererComponent(elevatorTable, "test", false, false, i, 0);
             CellPanel panel = (CellPanel) elevatorTable.getValueAt(i, 0);
             panel.setFloorNumber(Integer.toString(22-i));
-            System.out.println(panel.getFloorNumberText());
+            //System.out.println(panel.getFloorNumberText());
         }
         this.repaint();
     }
@@ -268,15 +270,13 @@ public class ElevatorInspector extends JFrame implements Runnable {
             }
     }
 
-//    private void updateFloorLamps()
-//    {
-//        for (int row = 0; row < 23; row++)
-//        {
-//            elevatorTable.getColumn(0).getCellRenderer().
-//        }
-//    }
-
-
+    private void updateFloorLamps()
+    {
+        for (int row = 0; row < 22; row++)
+        {
+            elevatorTable.setValueAt(elevatorTable.getValueAt(row, 0), row, 0);
+        }
+    }
 
     private void getMessages()
     {
@@ -285,12 +285,9 @@ public class ElevatorInspector extends JFrame implements Runnable {
             if (!message.isEmpty()) {
                 if (message.contains("Scheduler-1")) { // Scheduler
                     updateSchedulerLog(message);
-//                    int semiIndex = message.indexOf(":");
-//                    String messageText = message.substring(semiIndex + 1);
                 }
                 else if(message.contains("Elevator-")){ // Elevator
 
-//                    int elevatorId = Integer.parseInt(message.substring(message.indexOf("-") + 1));
                     int elevatorId = Character.getNumericValue(message.charAt(message.indexOf("-")+1));
                     Map<Integer, ArrayList<Serializable>> allElevators = store.getElevators();
                     ArrayList<Serializable> currentElevatorInfo = allElevators.get(elevatorId);
@@ -337,6 +334,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
                     if (store.getElevators().get(3) != null)elev3Pass.setText(store.getElevators().get(3).get(5).toString());
                     if (store.getElevators().get(4) != null)elev4Pass.setText(store.getElevators().get(4).get(5).toString());
                 }
+                updateFloorLamps();
 
             }
 
