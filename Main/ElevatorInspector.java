@@ -2,6 +2,7 @@
  * Represent the GUI interface for the elevator subsystem
  * @author Marwan Zeid
  * @author Garrison Su
+ * @author Eric ???
  * @version 2024-04-07
  */
 
@@ -180,18 +181,17 @@ public class ElevatorInspector extends JFrame implements Runnable {
 //                    String messageText = message.substring(semiIndex + 1);
                 }
                 else if(message.contains("Elevator-")){ // Elevator
-                    int elevatorId = Integer.parseInt(message.substring(message.lastIndexOf("Elevator-") + 1));
+//                    int elevatorId = Integer.parseInt(message.substring(message.indexOf("-") + 1));
+                    int elevatorId = Character.getNumericValue(message.charAt(message.indexOf("-")+1));
                     Map<Integer, ArrayList<Serializable>> allElevators = store.getElevators();
                     ArrayList<Serializable> currentElevatorInfo = allElevators.get(elevatorId);
                     int currentFloor = (Integer) currentElevatorInfo.get(2);
-
                     int destination = (Integer) currentElevatorInfo.get(3);
                     destinationColor(elevatorId, destination);
-
                     updateElevatorLog(elevatorId, message);
-                    if (message.contains("Error-1")) { // traunset error
+                    if (message.contains("Error-1")) { // transient error
                         moveElevatorGUI(elevatorId, currentFloor, 1);
-                    } else if (message.contains("Error-2")) { // hard fault
+                    } else if (message.contains("Error-2")) { // hard fault error
                         moveElevatorGUI(elevatorId, currentFloor, 2);
                     } else{
                         moveElevatorGUI(elevatorId, currentFloor, 0);
@@ -200,6 +200,7 @@ public class ElevatorInspector extends JFrame implements Runnable {
                     printALlElevators(message);
                 }
             }
+
         } catch (RemoteException e) {
             System.out.println("Error in getMessages");
         }
@@ -268,20 +269,14 @@ public class ElevatorInspector extends JFrame implements Runnable {
     public static void main(String[] args) {
         try {
             SchedulerStoreInt store = (SchedulerStoreInt) Naming.lookup("rmi://localhost/store");
-
             ElevatorInspector.getInstance(store).setVisible(true);
             Scheduler scheduler = new Scheduler(store);
-
             Thread schedulerThread = new Thread(scheduler);
             schedulerThread.start();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-
-
-
     }
-
 }
 
 class SplitTableCellRenderer implements TableCellRenderer {
