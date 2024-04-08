@@ -256,6 +256,8 @@ public class Scheduler implements Runnable {
             {
                 return false;
             }
+            if (!sourceFloors.get(key).isEmpty()) return false;
+            if (!destFloors.get(key).isEmpty()) return false;
         }
         return true;
     }
