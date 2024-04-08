@@ -8,6 +8,7 @@ import java.net.*;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
+import java.sql.Array;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -224,6 +225,11 @@ public class Scheduler implements Runnable {
                             store.addLog("Scheduler-1: Elevator " + pkey + " max passengers: " + maxPassengers.get(pkey));
                             store.addLog("Scheduler-1: Elevator " + pkey + " total requests done: " + totalRequestsDone.get(pkey));
                         }
+                        Timestamp firstTime = Timestamp.valueOf(store.getFirstRequest());
+                        Timestamp lastTime = Timestamp.valueOf(store.getLastRequest());
+                        long totalTime = (lastTime.getTime() - firstTime.getTime())/(long)60000;
+                        store.addLog("Scheduler-1: Total time passed: " + totalTime);
+                        store.addLog("Scheduler-1: Throughput: " + ((long)requestsDone)/totalTime + " per minute");
                     }
                     Thread.sleep(10);
                     sendToClosest(key);
@@ -440,7 +446,7 @@ public class Scheduler implements Runnable {
      * @param sourceFloor The source floor of a request being processed
      * @param destFloor The destination floor of a request being processed
      */
-    public void findClosest(int sourceFloor, int destFloor, int fault, int elevatorNotBeingConsidered) {
+    public void findClosest(int sourceFloor, int destFloor, int fault, int elevatorNotBeingConsidered) throws RemoteException {
         Map<Integer, ArrayList<Serializable>> elevators;
         try {
             elevators = store.getElevators();
@@ -618,8 +624,8 @@ public class Scheduler implements Runnable {
             }
         }
 
-        System.out.println("New Lists: " + closestID + " " + sourceFloors.get(closestID));
-        System.out.println("New Lists: " + closestID + " " + srcDestPairs.get(closestID).values());
+        store.addLog("Scheduler-1: Elevator " + closestID + " source floors: " + sourceFloors.get(closestID));
+        store.addLog("Scheduler-1: Elevator " + closestID + " destination floors:  " + srcDestPairs.get(closestID).values());
     }
 
     /*
