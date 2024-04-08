@@ -34,6 +34,8 @@ public class Scheduler implements Runnable {
     private Map<Integer, Map<Integer, LinkedList<Integer>>> srcDestPairs;
     private  Map<Integer, Map<Integer, Integer>> destErrorPairs;
     private Map<Integer, Integer> elevatorPassengers;
+    private Map<Integer, Integer> maxPassengers;
+    private Map<Integer, Integer> totalRequestsDone;
     private int requestsDone = 0;
     private int moveRequestsSent = 0;
     boolean receivedFirst = false;
@@ -51,6 +53,8 @@ public class Scheduler implements Runnable {
         srcDestPairs = new HashMap<>();
         destErrorPairs = new HashMap<>();
         elevatorPassengers = new HashMap<>();
+        maxPassengers = new HashMap<>();
+        totalRequestsDone = new HashMap<>();
 
         try {
             this.store =  store;
@@ -62,6 +66,8 @@ public class Scheduler implements Runnable {
                 destErrorPairs.put(i, new HashMap<>());
                 elevatorPassengers.put(i, 0);
                 lastKnownDirection.put(i, "IDLE");
+                totalRequestsDone.put(i, 0);
+                maxPassengers.put(i, 0);
             }
         } catch (SocketException | RemoteException se) {
             se.printStackTrace();
@@ -166,6 +172,7 @@ public class Scheduler implements Runnable {
                         // check number of people boarding:
                         store.addLog("Elevator-" + key + ": " + (estimatedPassengers - elevatorPassengers.get(key) + " passengers boarded"));
                         elevatorPassengers.put(key, estimatedPassengers);
+                        if (maxPassengers.get(key) < estimatedPassengers) maxPassengers.put(key, estimatedPassengers);
                         store.updateElevator(key, 5, estimatedPassengers);
                         if (!srcDestPairs.get(key).get(currFloor).isEmpty()) //if requests remain, reassign them
                         {
@@ -206,9 +213,18 @@ public class Scheduler implements Runnable {
                     if (checkAllElevatorsIdle() && lastRequestReceived)
                     {
                         store.setLastRequest(String.valueOf(new Timestamp((new Date()).getTime())));
-                        System.out.println("Finished!!");
                     }
                     store.addLog("Scheduler-1: Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
+
+                    if (checkAllElevatorsIdle() && lastRequestReceived)
+                    {
+                        store.addLog("Scheduler-1: Final Elevator Values:");
+                        for (Integer pkey: maxPassengers.keySet())
+                        {
+                            store.addLog("Scheduler-1: Elevator " + pkey + " max passengers: " + maxPassengers.get(pkey));
+                            store.addLog("Scheduler-1: Elevator " + pkey + " total requests done: " + totalRequestsDone.get(pkey));
+                        }
+                    }
                     Thread.sleep(10);
                     sendToClosest(key);
                 }
@@ -243,6 +259,7 @@ public class Scheduler implements Runnable {
         int passengers = Collections.frequency(destFloors.get(key), currFloor);
         elevatorPassengers.put(key, elevatorPassengers.get(key) - passengers);
         store.updateElevator(key, 5, elevatorPassengers.get(key));
+        totalRequestsDone.put(key, totalRequestsDone.get(key) + passengers);
         requestsDone += passengers;
         store.setPassengersServiced(requestsDone);
         store.addLog("Elevator-" + key + ": dropped " + passengers + " passengers");
