@@ -24,10 +24,10 @@ import static java.lang.Math.abs;
 
 public class Elevator implements Runnable {
 
-    public static final long TIME_PER_FLOOR = 3000; // Average time per floor in milliseconds (10000)
-    public static final long DOOR_OPERATION_TIME = 1000; // Average door operation time in milliseconds (3000)
+    public static final long TIME_PER_FLOOR = 10000; // Average time per floor in milliseconds (10000)
+    public static final long DOOR_OPERATION_TIME = 3000; // Average door operation time in milliseconds (3000)
     public static final int ACK_LOOP_WAIT_TIME = 3000; // Time to wait for a response from the scheduler
-    public static final int BOARDING_TIME = 1000; // Average passenger boarding time in milliseconds (5000)
+    public static final int BOARDING_TIME = 5000; // Average passenger boarding time in milliseconds (5000)
     private int currentFloor; // current floor of elevator
     private final int elevatorId; // ID of elevator
     private boolean doorsOpen; // boolean for if doors are open

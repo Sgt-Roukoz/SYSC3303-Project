@@ -4,6 +4,8 @@ import com.sun.nio.sctp.PeerAddressChangeNotification;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.*;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
@@ -217,6 +219,7 @@ public class Scheduler implements Runnable {
                     }
                     store.addLog("Scheduler-1: Elevator " + key + " arrived at destination floor " + sourceElevs.get(key).get(2));
 
+                    //display final statistics if at end of input file
                     if (checkAllElevatorsIdle() && lastRequestReceived)
                     {
                         store.addLog("Scheduler-1: Final Elevator Values:");
@@ -227,10 +230,13 @@ public class Scheduler implements Runnable {
                         }
                         Timestamp firstTime = Timestamp.valueOf(store.getFirstRequest());
                         Timestamp lastTime = Timestamp.valueOf(store.getLastRequest());
-                        long totalTime = (lastTime.getTime() - firstTime.getTime())/(long)60000;
-                        store.addLog("Scheduler-1: Total time passed: " + totalTime);
-                        store.addLog("Scheduler-1: Throughput: " + ((long)requestsDone)/totalTime + " per minute");
+                        double totalTime = (lastTime.getTime() - firstTime.getTime())/60000.00;
+                        BigDecimal scaledTotal = new BigDecimal(totalTime).setScale(2, RoundingMode.HALF_UP);
+                        store.addLog("Scheduler-1: Total time passed: " + scaledTotal + " minutes");
+                        BigDecimal scaledThroughput = new BigDecimal(((double)requestsDone) / totalTime).setScale(3, RoundingMode.HALF_UP);
+                        store.addLog("Scheduler-1: Throughput: " + scaledThroughput + " requests per minute");
                     }
+
                     Thread.sleep(10);
                     sendToClosest(key);
                 }
