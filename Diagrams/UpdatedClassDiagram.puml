@@ -1,20 +1,24 @@
 @startuml
 'https://plantuml.com/class-diagram
 
+class CellPanel
+class CustomCellRenderer
 class Elevator
 class ElevatorEvent
+class ElevatorInspector
 class Floor
+class HelperFunctions
+class Idle
+class LoadingUnloading
+class Moving
 class Scheduler
 class SchedulerReceiver
 class SchedulerStore
-class Idle
-class Moving
-class LoadingUnloading
-class HelperFunctions
+class SplitTableCellRenderer
 enum ELEVATOR_BUTTON <<enumeration>>
 exception InterruptedException <<exception>>
-interface Runnable <<interface>>
 interface ElevatorState <<interface>>
+interface Runnable <<interface>>
 interface SchedulerStoreInt <<interface>>
 
 InterruptedException <|.. Elevator
@@ -183,4 +187,61 @@ class HelperFunctions{
 +{Static} printDataInfo(data: byte[], len: int): void
 }
 
+class CellPanel extends JPanel{
+upLamp: JPanel
+downLamp: JPanel
+floorNumber: JPanel
+floorNumberText: JTextArea
++CellPanel()
++upLampOff(): void
++downLampOn(): void
++downLampOff(): void
++setFloorNumber(text: String): void
+}
+
+class CustomCellRenderer extends DefaultTableCellRenderer{
+-specialRow: int
+-specialColumn: int
+-color: Color
++CustomCellRenderer(specialRow: int, specialColumn: int, color: Color)
++getTableCellRendererComponent(table: JTable, value: Object, isSelected: boolean, hasFocus: boolean, row: int, column: int): Component
+}
+
+class ElevatorInspector extends JFrame implements Runnable{
+-elevatorTable: JTable
+-store: SchedulerStoreInt
+layout: GridBagLayout
+gbc: GridBagConstraints
+elev1TextArea: JTextArea
+elev2TextArea: JTextArea
+elev3TextArea: JTextArea
+elev4TextArea: JTextArea
+SchedulerTextArea: JTextArea
+elev1Pass: JTextField
+elev2Pass: JTextField
+elev3Pass: JTextField
+elev4Pass: JTextField
+requestsDone: JTextField
+firstRequest: JTextField
+lastRequest: JTextField
+totalMoves: JTextField
++ElevatorInspector(store: SchedulerStoreInt)
++run(): void
+-setTableVal(col: int, val: String): void
+-updateFloorLamps(): void
+-getMessages(): void
++updateElevatorLog(elevatorId: int, message: String): void
++updateSchedulerLog(message: String): void
++printALlElevators(message: String): void
++moveElevatorGUI(elevatorId: int, floor: int, error: int): void
++destinationColor(elevatorId: int, destination: int): void
++addObject(component: Component, parentContainer: Container, gridx: int, gridy: int, gridwidth: int, gridheight: int, weightx: double, weighty: double): void
++{static} main(args: String[]): void
+}
+
+class SplitTableCellRenderer implements TableCellRenderer{
+CellPanel rendererPanel
++SplitTableCellRenderer()
++getTableCellRendererComponent(table: JTable, value: Object, isSelected: boolean, hasFocus: boolean, row: int, column: int): Component
+}
 @enduml
