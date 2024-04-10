@@ -42,16 +42,49 @@ updateElevator(elevID: Integer, itemToEdit: int, value: Serializable) throws Rem
 getFloorRequest() throws RemoteException: ElevatorEvent
 setFloorRequest(event: ElevatorEvent) throws RemoteException: void
 removeElevator(id: int) throws RemoteException: void
+getPassengerCounts() throws RemoteException: addLog(String message) throws RemoteException: void
+receiveLog() throws RemoteException: String
+setPassengersServiced(requests: int) throws RemoteException: void
+setMovesDone(requests: int) throws RemoteException: void
+setFirstRequest(time: String) throws RemoteException: void
+setLastRequest(time: String) throws RemoteException: void
+getPassengersServiced() throws RemoteException: int
+getMovesDone() throws RemoteException: int
+getFirstRequest() throws RemoteException: String
+getLastRequest() throws RemoteException: String
 }
 
-class SchedulerStore implements SchedulerStoreInt {
-+floorRequests: ArrayDeque<ElevatorEvent>
-+elevators: Map<Integer, ArrayList<Serializable>>
+class SchedulerStore extends UnicastRemoteObject implements SchedulerStoreInt {
+-floorRequests: ArrayDeque<ElevatorEvent>
+-elevators: Map<Integer, ArrayList<Serializable>>
+-messageLog: ArrayDeque<String>
+-passengersServiced: int
+-totalMoves: int
+-firstRequestStamp: String
+-lastRequestStamp: String
 +SchedulerStore() throws RemoteException
-}
++(synchronized) addElevator (elevID: Integer, address: InetAddress, port: Integer): void
++(synchronized) Map<Integer, ArrayList<Serializable>> getElevators()
++(synchronized) void updateElevator(Integer elevID, int itemToEdit, Serializable value)
++(synchronized) ElevatorEvent getFloorRequest()
++(synchronized) void setFloorRequest(ElevatorEvent event)
++(synchronized) void removeElevator(int id)
++(synchronized) void addLog(String message)
++(synchronized) String receiveLog()
++setPassengersServiced(requests: int) throws RemoteException: void
++setMovesDone(requests: int) throws RemoteException: void
++setFirstRequest(time: String) throws RemoteException: void
++setLastRequest(time: String) throws RemoteException: void
++getPassengersServiced() throws RemoteException: int
++getMovesDone() throws RemoteException: int
++getFirstRequest() throws RemoteException: String
++getLastRequest() throws RemoteException: String
++(synchronized) getPassengerCounts(): }
 
 class Idle implements ElevatorState {
 }
+
+ElevatorState <|.. Idle
 
 class Moving implements ElevatorState {
 }
@@ -60,9 +93,10 @@ class LoadingUnloading implements ElevatorState {
 }
 
 class Elevator implements Runnable {
--{static} TIME_PER_FLOOR: long {readOnly}
-#{static} DOOR_OPERATION_TIME: long {readOnly}
--{static} ACK_LOOP_WAIT_TIME: long {readOnly}
++{static} TIME_PER_FLOOR: long {readOnly}
++{static} DOOR_OPERATION_TIME: long {readOnly}
++{static} ACK_LOOP_WAIT_TIME: int {readOnly}
++{static} BOARDING_TIME: int {readOnly}
 -currentFloor: int
 -elevatorId: int {readOnly}
 -doorsOpen: boolean
@@ -87,6 +121,7 @@ class Elevator implements Runnable {
 +setCurrentState(nextState: String): void
 -sendIExistMessage(): void
 #waitMessageScheduler(): void
+#sendLog(String message): void
 #packetSentGetAck(message: String): void
 #sendIdleStatusUpdate(): void
 #sendMovingStatusUpdate(): void
@@ -96,10 +131,13 @@ class Elevator implements Runnable {
 -checkFaultType(msg: String): void
 #openDoors() throws InterruptedException: void
 #closeDoors() throws InterruptedException : void
+protected void boardPassengers() throws InterruptedException
 +setOpenDoors(): void
 +setCloseDoors(): void
 +getDoorBoolean(): boolean
 +getCurrentState(): String
+ public boolean getTransientFault()
+public boolean getHardFault()
 +{Static} main(args:String[]): void
 }
 
@@ -111,31 +149,33 @@ START_MOVE
 ARRIVAL
 }
 
-class ElevatorEvent{
+class ElevatorEvent implements Serializable{
 -time: String {readOnly}
 -sourceFloor: int {readOnly}
 -destFloor: int {readOnly}
 -button: ELEVATOR_BUTTON {readOnly}
 -faultType: int{readOnly}
+-lastReq: boolean{readOnly}
 
-+ElevatorEvent(time: String, floor: int, button: ELEVATOR_BUTTON, car_button: int, fault: int)
++ElevatorEvent(time: String, floor: int, button: ELEVATOR_BUTTON, car_button: int, fault: int, lastReq: boolean)
 +toString(): String
 +getTime(): String
 +getSourceFloor(): int
 +getDestFloor(): int
 +getButton(): ELEVATOR_BUTTON
 +getFaultType(): int
++isLastReq(): boolean
 }
 
-class Floor extends Thread{
--MAX_FLOORS: int {readOnly}
--rand: Random {readOnly}
+class Floor implements Runnable{
+-prevTime: LocalTime
+-curTime: LocalTime
 -sendReceiveSocket: DatagramSocket {readOnly}
 -sendPacket: DatagramPacket
 
 +Floor()
 +processFile(file: File): void
-+processInput(input: String): void
++processInput(input: String, lastLine: boolean): void
 +run(): void
 +{Static} main(args:String[]): void
 }
@@ -150,19 +190,28 @@ class Scheduler implements Runnable{
 -destFloors: Map<Integer, LinkedList<Integer>>
 -lastKnownDirection: Map<Integer, String>
 -srcDestPairs: Map<Integer, Map<Integer, LinkedList<Integer>>>
--srcErrorPairs: Map<Integer, Map<Integer, Integer>>
+-destErrorPairs: Map<Integer, Map<Integer, Integer>>
+-elevatorPassengers: Map<Integer, Integer>
+-maxPassengers: Map<Integer, Integer>
+-totalRequestsDone: Map<Integer, Integer>
+-int requestsDone: int
+-int moveRequestsSent: int
+receivedFirst: boolean
+lastRequestReceived: boolean
 
 +Scheduler(store: SchedulerStoreInt)
-+run():void
--removeOutOfOrderElevators() throws RemoteException : void
++run(): void
+-removeOutOfOrderElevators() throws RemoteException: void
 -readFloorRequest() throws RemoteException: void
 -checkArrivedAtAnyFloor() throws RemoteException, InterruptedException: void
+-checkAllElevatorsIdle() throws RemoteException: boolean
+-doDestinations(sourceElevs: Map<Integer, ArrayList<Serializable>>, key: Integer, currFloor: int) throws RemoteException: void
 -contains(list: LinkedList<Integer>, value: Integer): boolean
 -createMessage(elevId: int, floor: int, fault: int) throws RemoteException: String
 -sendCommand(elevId: int, floor: int, fault: int): void
 -findNextClosest(floor: int, destfloors: LinkedList<Integer>, srcFloors: LinkedList<Integer>, direction: String): int
--sendToClosest(elevId: Integer): void
--findClosest(sourceFloor: int, destFloor: int, fault: int): void
+-sendToClosest(elevID: Integer) throws RemoteException: void
++findClosest(sourceFloor: int, destFloor: int, fault: int, elevatorNotBeingConsidered: int) throws RemoteException: void
 +setReadFloorRequest(): void
 +setProcessFloorRequest(): void
 +getFloorRequestToBeProcessed(): ElevatorEvent
