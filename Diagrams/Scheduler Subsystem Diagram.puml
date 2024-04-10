@@ -1,0 +1,107 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+class Scheduler
+class SchedulerReceiver
+class SchedulerStore
+interface SchedulerStoreInt <<interface>>
+
+Scheduler *-down- SchedulerStoreInt
+SchedulerReceiver *-- SchedulerStoreInt
+
+interface SchedulerStoreInt{
+addElevator(elevId: Integer, address: InetAddress, port: Integer) throws RemoteException: void
+getElevators() throws RemoteException: Map<Integer, ArrayList<Serializable>>
+updateElevator(elevID: Integer, itemToEdit: int, value: Serializable) throws RemoteException: void
+getFloorRequest() throws RemoteException: ElevatorEvent
+setFloorRequest(event: ElevatorEvent) throws RemoteException: void
+removeElevator(id: int) throws RemoteException: void
+getPassengerCounts() throws RemoteException: addLog(String message) throws RemoteException: void
+receiveLog() throws RemoteException: String
+setPassengersServiced(requests: int) throws RemoteException: void
+setMovesDone(requests: int) throws RemoteException: void
+setFirstRequest(time: String) throws RemoteException: void
+setLastRequest(time: String) throws RemoteException: void
+getPassengersServiced() throws RemoteException: int
+getMovesDone() throws RemoteException: int
+getFirstRequest() throws RemoteException: String
+getLastRequest() throws RemoteException: String
+}
+
+class SchedulerStore extends UnicastRemoteObject implements SchedulerStoreInt {
+-floorRequests: ArrayDeque<ElevatorEvent>
+-elevators: Map<Integer, ArrayList<Serializable>>
+-messageLog: ArrayDeque<String>
+-passengersServiced: int
+-totalMoves: int
+-firstRequestStamp: String
+-lastRequestStamp: String
++SchedulerStore() throws RemoteException
++addElevator (elevID: Integer, address: InetAddress, port: Integer): void
++Map<Integer, ArrayList<Serializable>> getElevators()
++void updateElevator(Integer elevID, int itemToEdit, Serializable value)
++ElevatorEvent getFloorRequest()
++void setFloorRequest(ElevatorEvent event)
++void removeElevator(int id)
++void addLog(String message)
++String receiveLog()
++setPassengersServiced(requests: int) throws RemoteException: void
++setMovesDone(requests: int) throws RemoteException: void
++setFirstRequest(time: String) throws RemoteException: void
++setLastRequest(time: String) throws RemoteException: void
++getPassengersServiced() throws RemoteException: int
++getMovesDone() throws RemoteException: int
++getFirstRequest() throws RemoteException: String
++getLastRequest() throws RemoteException: String
++getPassengerCounts(): Map<Integer, Integer>
+}
+
+class Scheduler implements Runnable{
+-sendReceiveSocket: DatagramSocket
+-floorRequestToBeProcessed: ElevatorEvent
+-processedRequest:ElevatorEvent
+-store: SchedulerStoreInt
+-sourceFloors: Map<Integer, LinkedList<Integer>>
+-destFloors: Map<Integer, LinkedList<Integer>>
+-lastKnownDirection: Map<Integer, String>
+-srcDestPairs: Map<Integer, Map<Integer, LinkedList<Integer>>>
+-destErrorPairs: Map<Integer, Map<Integer, Integer>>
+-elevatorPassengers: Map<Integer, Integer>
+-maxPassengers: Map<Integer, Integer>
+-totalRequestsDone: Map<Integer, Integer>
+-int requestsDone: int
+-int moveRequestsSent: int
+-receivedFirst: boolean
+-lastRequestReceived: boolean
+
++Scheduler(store: SchedulerStoreInt)
++run(): void
+-removeOutOfOrderElevators() throws RemoteException: void
+-readFloorRequest() throws RemoteException: void
+-checkArrivedAtAnyFloor() throws RemoteException, InterruptedException: void
+-checkAllElevatorsIdle() throws RemoteException: boolean
+-doDestinations(sourceElevs: Map<Integer, ArrayList<Serializable>>, key: Integer, currFloor: int) throws RemoteException: void
+-contains(list: LinkedList<Integer>, value: Integer): boolean
+-createMessage(elevId: int, floor: int, fault: int) throws RemoteException: String
+-sendCommand(elevId: int, floor: int, fault: int): void
+-findNextClosest(floor: int, destfloors: LinkedList<Integer>, srcFloors: LinkedList<Integer>, direction: String): int
+-sendToClosest(elevID: Integer) throws RemoteException: void
++findClosest(sourceFloor: int, destFloor: int, fault: int, elevatorNotBeingConsidered: int) throws RemoteException: void
++setReadFloorRequest(): void
++setProcessFloorRequest(): void
++getFloorRequestToBeProcessed(): ElevatorEvent
++getProcessedRequest(): ElevatorEvent
++{Static} main(args:String[]): void
+}
+
+class SchedulerReceiver implements Runnable{
+
+-store: SchedulerStoreInt
+-port: int {readOnly}
+
++SchedulerReceiver(store: SchedulerStoreInt)
++run(): void
++{Static} main(args:String[]): void
+}
+
+@enduml

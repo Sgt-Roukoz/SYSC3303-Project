@@ -1,0 +1,60 @@
+@startuml
+'https://plantuml.com/class-diagram
+
+left to right direction
+
+class Floor
+class ElevatorEvent
+class HelperFunctions
+enum ELEVATOR_BUTTON <<enumeration>>
+
+ELEVATOR_BUTTON <|.. ElevatorEvent
+ELEVATOR_BUTTON <|.. Floor
+
+enum ELEVATOR_BUTTON {
+UP
+DOWN
+INSIDE
+START_MOVE
+ARRIVAL
+}
+
+class ElevatorEvent implements Serializable{
+-time: String {readOnly}
+-sourceFloor: int {readOnly}
+-destFloor: int {readOnly}
+-button: ELEVATOR_BUTTON {readOnly}
+-faultType: int{readOnly}
+-lastReq: boolean{readOnly}
+
++ElevatorEvent(time: String, floor: int, button: ELEVATOR_BUTTON, car_button: int, fault: int, lastReq: boolean)
++toString(): String
++getTime(): String
++getSourceFloor(): int
++getDestFloor(): int
++getButton(): ELEVATOR_BUTTON
++getFaultType(): int
++isLastReq(): boolean
+}
+
+class Floor implements Runnable{
+-prevTime: LocalTime
+-curTime: LocalTime
+-sendReceiveSocket: DatagramSocket {readOnly}
+-sendPacket: DatagramPacket
+
++Floor()
++processFile(file: File): void
++processInput(input: String, lastLine: boolean): void
++run(): void
++{Static} main(args:String[]): void
+}
+
+class HelperFunctions{
++{Static} generateMsg(stringMsg: String): byte[]
++{Static} translateMsg(msg: byte[], len: int): String
++{Static} validateData(msg: byte[], len: int): boolean
++{Static} printDataInfo(data: byte[], len: int): void
+}
+
+@enduml

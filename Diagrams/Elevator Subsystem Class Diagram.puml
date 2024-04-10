@@ -1,0 +1,77 @@
+@startuml
+'https://plantuml.com/class-diagram
+class Elevator
+class Idle
+class LoadingUnloading
+class Moving
+interface ElevatorState <<interface>>
+Elevator *-right- ElevatorState
+
+interface ElevatorState {
+entry(context:Elevator): void
+floorRequest(context:Elevator): void
+arrivedAtFloor(context:Elevator): void
+doorsClosed(context:Elevator): void
+displayState(): void
+toString(): String
+}
+
+class Idle implements ElevatorState {
+}
+
+class Moving implements ElevatorState {
+}
+
+class LoadingUnloading implements ElevatorState {
+}
+
+class Elevator implements Runnable {
++{static} TIME_PER_FLOOR: long {readOnly}
++{static} DOOR_OPERATION_TIME: long {readOnly}
++{static} ACK_LOOP_WAIT_TIME: int {readOnly}
++{static} BOARDING_TIME: int {readOnly}
+-currentFloor: int
+-elevatorId: int {readOnly}
+-doorsOpen: boolean
+-states: Map<String, ElevatorState> {readOnly}
+-currentState: ElevatorState
+-{static} serverPort: int {readOnly}
+-sendReceiveSocket: DatagramSocket
+-acknowledged: boolean
+-MAX_ATTEMPTS: int {readOnly}
+-direction: String
+-destinationFloor: int
+#transientFault: boolean
+#hardFault: boolean
+
++Elevator(elevatorId: int)
++floorRequested(): void
++arrivedAtFloor(): void
++doorsClosed(): void
++getCurrentFloor(): int
++getDestinationFloor(): int
++getElevatorId(): int
++setCurrentState(nextState: String): void
+-sendIExistMessage(): void
+#waitMessageScheduler(): void
+#sendLog(String message): void
+#packetSentGetAck(message: String): void
+#sendIdleStatusUpdate(): void
+#sendMovingStatusUpdate(): void
++run(): void
+#moveToFloor(floor: int) throws InterruptedException : void
+#checkForIncomingMessages(): void
+-checkFaultType(msg: String): void
+#openDoors() throws InterruptedException: void
+#closeDoors() throws InterruptedException : void
+#boardPassengers(): void
++setOpenDoors(): void
++setCloseDoors(): void
++getDoorBoolean(): boolean
++getCurrentState(): String
++getTransientFault(): boolean
++getHardFault(): boolean
++{Static} main(args:String[]): void
+}
+
+@enduml

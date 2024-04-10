@@ -1,6 +1,5 @@
 @startuml
 'https://plantuml.com/class-diagram
-
 class CellPanel
 class CustomCellRenderer
 class Elevator
@@ -181,7 +180,6 @@ class Floor implements Runnable{
 }
 
 class Scheduler implements Runnable{
-
 -sendReceiveSocket: DatagramSocket
 -floorRequestToBeProcessed: ElevatorEvent
 -processedRequest:ElevatorEvent
